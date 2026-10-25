@@ -1,4 +1,36 @@
 {
-    "syncedAt": null,
-    "events": []
+  "syncedAt": "2026-10-25T14:50:09.321Z",
+  "events": [
+    {
+      "product": "MacBook Pro",
+      "event": "released",
+      "date": "2026-10",
+      "chip": null,
+      "summary": "Apple is expected to launch the first touchscreen OLED MacBook Pro this week.",
+      "link": "https://9to5mac.com/2026/10/25/macbook-pro-redesign-oled-touch-launching-this-week/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Sun, 25 Oct 2026 14:48:28 +0000"
+    },
+    {
+      "product": "iPhone",
+      "event": "released",
+      "date": "2026-10-23",
+      "chip": null,
+      "summary": "iPhone Duo arrives at Apple Store locations worldwide",
+      "link": "https://www.apple.com/newsroom/2026/10/iphone-duo-arrives-at-apple-store-locations-worldwide/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-23T06:10:35.677Z"
+    },
+    {
+      "product": "iPhone",
+      "event": "released",
+      "date": "2026-10-22",
+      "chip": null,
+      "summary": "iPhone Duo (first foldable iPhone) is available and developers are releasing optimized apps.",
+      "link": "https://www.apple.com/newsroom/2026/10/developers-bring-incredible-new-app-experiences-to-iphone-duo/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-22T11:59:15.686Z"
+    }
+  ],
+  "articleCount": 8
 }
