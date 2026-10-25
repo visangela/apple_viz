@@ -454,16 +454,83 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 let AGENT_EVENTS = [];
 
+// async function fetchAgentEvents() {
+//     try {
+//         // 加时间戳查询参数，绕过 GitHub Pages 的 10 分钟缓存
+//         const res = await fetch(`./events.json?v=${Date.now()}`, { cache: 'no-store' });
+//         if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+//         const data = await res.json();
+//         AGENT_EVENTS = data.events || [];
+
+//         // 更新时间轴
+//         DATA = buildMergedData(AGENT_EVENTS);
+//         buildAxis();
+//         buildRows();
+//         buildLegend();
+//         buildTodayLine();
+//         updateVisibility();
+//         renderFeed(AGENT_EVENTS);
+
+//         // 更新状态条
+//         const meta = document.getElementById('agentMeta');
+//         if (data.syncedAt) {
+//             const t = new Date(data.syncedAt).toLocaleString('zh-CN', { hour12: false }).slice(0, 16);
+//             meta.textContent = `上次同步：${t} · ${AGENT_EVENTS.length} 条 Apple 相关事件（GitHub Actions 每日自动更新）`;
+//         } else {
+//             meta.textContent = 'events.json 尚未生成，等待首次 Actions 运行';
+//         }
+//     } catch (err) {
+//         console.error('加载 events.json 失败', err);
+//         document.getElementById('agentMeta').textContent =
+//             `events.json 加载失败：${err.message} · 时间轴显示基线数据`;
+//         // 失败时至少保证时间轴渲染基线数据
+//         DATA = buildMergedData([]);
+//         buildAxis();
+//         buildRows();
+//         buildLegend();
+//         buildTodayLine();
+//         updateVisibility();
+//     }
+// }
+
+
 async function fetchAgentEvents() {
     try {
-        // 加时间戳查询参数，绕过 GitHub Pages 的 10 分钟缓存
         const res = await fetch(`./events.json?v=${Date.now()}`, { cache: 'no-store' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        AGENT_EVENTS = data.events || [];
+        const rawEvents = data.events || [];
 
-        // 更新时间轴
+        // 关键：把后端字段映射为前端格式
+        AGENT_EVENTS = rawEvents.map(e => ({
+            time: e.date || (e.pubDate ? e.pubDate.slice(0, 10) : ''),
+            text: e.summary || '',
+            source: e.sourceName || 'OpenRouter Agent',
+            tag: e.event || 'rumor',
+            tagText: {
+                released: '已发布',
+                confirmed: '已官宣',
+                delayed: '已推迟',
+                cancelled: '已取消',
+                rumor: '传闻'
+            }[e.event] || '资讯',
+            link: e.link || '',
+            patch: {
+                // date 存在才尝试匹配时间轴，否则只挂情报到信息框
+                match: e.date
+                    ? { p: e.product, d: e.date }
+                    : { p: e.product, d: null },
+                apply: {
+                    status: e.event,
+                    v: e.summary,
+                    src: `${e.sourceName || 'Agent'}（Gemma 4 31B 抽取）`
+                }
+            }
+        }));
+
+        // 重建时间轴
         DATA = buildMergedData(AGENT_EVENTS);
         buildAxis();
         buildRows();
@@ -472,10 +539,11 @@ async function fetchAgentEvents() {
         updateVisibility();
         renderFeed(AGENT_EVENTS);
 
-        // 更新状态条
         const meta = document.getElementById('agentMeta');
         if (data.syncedAt) {
-            const t = new Date(data.syncedAt).toLocaleString('zh-CN', { hour12: false }).slice(0, 16);
+            const t = new Date(data.syncedAt)
+                .toLocaleString('zh-CN', { hour12: false })
+                .slice(0, 16);
             meta.textContent = `上次同步：${t} · ${AGENT_EVENTS.length} 条 Apple 相关事件（GitHub Actions 每日自动更新）`;
         } else {
             meta.textContent = 'events.json 尚未生成，等待首次 Actions 运行';
@@ -484,7 +552,6 @@ async function fetchAgentEvents() {
         console.error('加载 events.json 失败', err);
         document.getElementById('agentMeta').textContent =
             `events.json 加载失败：${err.message} · 时间轴显示基线数据`;
-        // 失败时至少保证时间轴渲染基线数据
         DATA = buildMergedData([]);
         buildAxis();
         buildRows();
@@ -587,6 +654,41 @@ function classifyArticle(title, desc, text, link, sourceName, pubDate) {
 
 /////////////////////
 
+// function buildMergedData(events) {
+//     const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
+
+//     events.forEach(evt => {
+//         if (!evt.patch) return;
+//         const { match, apply } = evt.patch;
+
+//         // date 为 null 时，只挂载情报到该产品线的第一条，不改条形状态
+//         if (match.d === null) {
+//             const anchor = data.find(d => d.p === match.p);
+//             if (anchor) {
+//                 anchor._agentNote = {
+//                     time: evt.time || '',
+//                     text: evt.text || '',
+//                     source: evt.source || '',
+//                     tag: evt.tag || 'rumor',
+//                     tagText: evt.tagText || '资讯',
+//                     link: evt.link || ''
+//                 };
+//             }
+//             return;
+//         }
+
+//         const target = data.find(d => d.p === match.p && d.d === match.d);
+//         if (target) {
+//             Object.assign(target, apply);
+//             target._agentPatched = true;
+//             target._agentNote = { /* ... */ };
+//         }
+//     });
+
+//     return data;
+// }
+
+
 function buildMergedData(events) {
     const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
 
@@ -594,7 +696,7 @@ function buildMergedData(events) {
         if (!evt.patch) return;
         const { match, apply } = evt.patch;
 
-        // date 为 null 时，只挂载情报到该产品线的第一条，不改条形状态
+        // date 为 null：只挂情报，不改条形状态
         if (match.d === null) {
             const anchor = data.find(d => d.p === match.p);
             if (anchor) {
@@ -610,11 +712,19 @@ function buildMergedData(events) {
             return;
         }
 
+        // 有明确日期：匹配到对应条形并覆盖状态
         const target = data.find(d => d.p === match.p && d.d === match.d);
         if (target) {
             Object.assign(target, apply);
             target._agentPatched = true;
-            target._agentNote = { /* ... */ };
+            target._agentNote = {
+                time: evt.time || '',
+                text: evt.text || '',
+                source: evt.source || '',
+                tag: evt.tag || 'rumor',
+                tagText: evt.tagText || '资讯',
+                link: evt.link || ''
+            };
         }
     });
 
