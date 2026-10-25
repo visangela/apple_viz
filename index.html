@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Apple 产品时间轴 · 真实 RSS Agent 版</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; padding: 28px 24px 56px;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+                     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        background: #f5f5f7; color: #1d1d1f; -webkit-font-smoothing: antialiased;
+    }
+    .page { max-width: 1500px; margin: 0 auto; }
+    h1 { font-size: 21px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; }
+    .subtitle { font-size: 12.5px; color: #6e6e73; margin-bottom: 16px; line-height: 1.55; }
+
+    .agent-bar {
+        display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+        background: #fff; border: 1px solid #e8e8ed; border-radius: 14px;
+        padding: 12px 18px; margin-bottom: 14px;
+    }
+    .agent-dot {
+        width: 8px; height: 8px; border-radius: 50%; background: #34c759;
+        box-shadow: 0 0 0 3px rgba(52,199,89,.18); flex-shrink: 0;
+        animation: pulse 2s infinite;
+    }
+    .agent-dot.error { background: #ff3b30; box-shadow: 0 0 0 3px rgba(255,59,48,.18); }
+    @keyframes pulse {
+        0%,100% { box-shadow: 0 0 0 3px rgba(52,199,89,.18); }
+        50% { box-shadow: 0 0 0 6px rgba(52,199,89,.08); }
+    }
+    .agent-label { font-size: 12.5px; font-weight: 600; }
+    .agent-meta { font-size: 11.5px; color: #86868b; }
+    .agent-actions { margin-left: auto; display: flex; gap: 8px; }
+    .agent-actions button {
+        padding: 6px 16px; border-radius: 980px; border: 1px solid #d2d2d7;
+        background: #fff; font-size: 12px; font-family: inherit; cursor: pointer;
+        transition: .15s;
+    }
+    .agent-actions button:hover { background: #f0f0f2; }
+    .agent-actions button.primary { background: #0071e3; border-color: #0071e3; color: #fff; }
+    .agent-actions button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .feed-panel {
+        background: #fff; border: 1px solid #e8e8ed; border-radius: 14px;
+        padding: 14px 18px; margin-bottom: 16px; max-height: 220px; overflow-y: auto;
+    }
+    .feed-title {
+        font-size: 12px; font-weight: 600; color: #6e6e73; margin-bottom: 10px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .feed-title::before { content:''; width:3px; height:13px; background:#0071e3; border-radius:2px; }
+    .feed-item {
+        display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f4f4f7;
+        font-size: 12.5px; line-height: 1.5; align-items: flex-start;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-time { flex: 0 0 82px; color: #86868b; font-size: 11px; padding-top: 1px; }
+    .feed-text { flex: 1; }
+    .feed-source { color: #86868b; font-size: 11px; }
+    .feed-tag {
+        display: inline-block; font-size: 10px; font-weight: 600; padding: 1px 7px;
+        border-radius: 5px; margin-left: 6px; white-space: nowrap;
+    }
+    .ft-released  { background: #e3f7e9; color: #0a7a2f; }
+    .ft-delayed   { background: #fff0e5; color: #b35c00; }
+    .ft-cancelled { background: #fdecea; color: #b3261e; }
+    .ft-confirmed { background: #fff3d6; color: #8a5a00; }
+    .ft-rumor     { background: #eaf1fb; color: #2b5fa8; }
+
+    .controls { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .controls button {
+        padding: 7px 22px; border-radius: 980px; border: 1px solid #d2d2d7;
+        background: #fff; font-size: 13px; font-family: inherit; color: #1d1d1f;
+        cursor: pointer; transition: all .18s;
+    }
+    .controls button:hover { background: #f0f0f2; }
+    .controls button.active { background: #0071e3; border-color: #0071e3; color: #fff; }
+
+    .legend {
+        display: flex; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 14px;
+        padding: 10px 16px; background: #fff; border: 1px solid #e8e8ed; border-radius: 12px;
+    }
+    .legend-item {
+        display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6e6e73;
+        cursor: pointer; padding: 4px 8px; border-radius: 7px; transition: .15s;
+        border: 1px solid transparent;
+    }
+    .legend-item:hover { background: #f5f5f7; }
+    .legend-item.active { color: #1d1d1f; font-weight: 600; background: #eef4fd; border-color: #cfe2fb; }
+    .legend-dot { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+
+    .timeline-wrap {
+        background: #fff; border: 1px solid #e8e8ed; border-radius: 16px;
+        overflow-x: auto; padding: 10px 24px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+    .timeline-inner { position: relative; min-width: 1120px; }
+    .axis { position: relative; height: 44px; margin-left: 132px; border-bottom: 1px solid #ebebef; }
+    .year-mark {
+        position: absolute; bottom: 6px; transform: translateX(-50%);
+        font-size: 11px; font-weight: 500; color: #86868b;
+    }
+    .tick { position: absolute; bottom: -1px; width: 1px; height: 7px; background: #dcdce1; transform: translateX(-50%); }
+    .grid-layer { position: absolute; left: 132px; right: 0; top: 44px; bottom: 0; pointer-events: none; z-index: 0; }
+    .grid-line { position: absolute; top: 0; bottom: 0; width: 1px; background: #f4f4f7; }
+
+    .rows { position: relative; z-index: 1; }
+    .product-row { display: flex; align-items: center; height: 50px; border-bottom: 1px solid #f6f6f8; }
+    .product-row:last-child { border-bottom: none; }
+    .product-label {
+        flex: 0 0 132px; width: 132px; font-size: 12px; font-weight: 600;
+        padding-right: 12px; line-height: 1.25;
+    }
+    .track { flex: 1; position: relative; height: 100%; }
+
+    .bar {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        height: 26px; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 0 5px; overflow: hidden; cursor: pointer; z-index: 2;
+        transition: opacity .18s, box-shadow .18s, filter .18s;
+        min-width: 3px;
+    }
+    .bar.status-released  { border: 1.5px solid; }
+    .bar.status-confirmed { border: 2.5px solid; }
+    .bar.status-predicted { border: 1.5px dashed; }
+    .bar.status-delayed   { border: 1.5px dashed; opacity: .72; }
+    .bar.status-cancelled { border: 1.5px dashed; opacity: .38; text-decoration: line-through; }
+    .bar:hover { filter: brightness(.95); box-shadow: 0 2px 12px rgba(0,0,0,.16); z-index: 4; }
+    .bar.hl    { box-shadow: 0 0 0 2.5px rgba(0,113,227,.5), 0 2px 10px rgba(0,0,0,.12); z-index: 4; }
+    .bar.dimmed { opacity: .1; }
+    .bar-label { font-size: 9.5px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+
+    .today-layer { position: absolute; left: 132px; right: 0; top: 0; bottom: 0; pointer-events: none; z-index: 6; }
+    .today-line { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px dashed #ff3b30; }
+    .today-tag {
+        position: absolute; top: 3px; left: 5px; white-space: nowrap;
+        font-size: 10px; font-weight: 600; color: #ff3b30;
+        background: #fff; padding: 1px 5px; border-radius: 4px; border: 1px solid #ffd6d2;
+    }
+
+    .info-panel {
+        margin-top: 18px; background: #fff; border: 1px solid #e8e8ed;
+        border-radius: 16px; padding: 20px 24px; min-height: 120px;
+        box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    }
+    .info-empty {
+        color: #86868b; font-size: 13px; display: flex;
+        align-items: center; height: 72px; justify-content: center;
+    }
+    .info-head { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .info-title { font-size: 17px; font-weight: 600; }
+    .badge { font-size: 11px; font-weight: 600; padding: 3px 11px; border-radius: 980px; white-space: nowrap; }
+    .st-released  { background: #e3f7e9; color: #0a7a2f; }
+    .st-confirmed { background: #fff3d6; color: #b36b00; }
+    .st-predicted { background: #eaf1fb; color: #2b5fa8; }
+    .st-delayed   { background: #fff0e5; color: #b35c00; }
+    .st-cancelled { background: #fdecea; color: #b3261e; }
+    .st-series    { background: #f0ecfb; color: #4a3a8a; }
+
+    .info-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px 28px; margin-bottom: 16px;
+    }
+    .info-item { display: flex; flex-direction: column; gap: 3px; }
+    .info-item .k { font-size: 11px; color: #86868b; }
+    .info-item .v { font-size: 13.5px; font-weight: 500; line-height: 1.4; }
+
+    .agent-note { border-top: 1px solid #f0f0f3; padding-top: 14px; margin-top: 4px; }
+    .agent-note-title {
+        font-size: 12px; font-weight: 600; color: #6e6e73; margin-bottom: 8px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .agent-note-title::before { content:''; width:3px; height:13px; background:#34c759; border-radius:2px; }
+    .agent-note-body { font-size: 12.5px; color: #515154; line-height: 1.7; }
+
+    .confidence-tag {
+        display: inline-flex; font-size: 11px; font-weight: 600;
+        padding: 2px 9px; border-radius: 6px; margin-left: 4px;
+    }
+    .conf-high { background: #e3f7e9; color: #0a7a2f; }
+    .conf-mid  { background: #fff3d6; color: #8a5a00; }
+    .conf-low  { background: #f0f0f3; color: #6e6e73; }
+
+    .series-summary-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 10px 24px;
+    }
+    .series-summary-item {
+        display: flex; justify-content: space-between; gap: 12px;
+        padding: 8px 12px; border-radius: 8px; background: #fafafc;
+        font-size: 12.5px; line-height: 1.45;
+    }
+    .series-summary-item .ss-product { font-weight: 500; }
+    .series-summary-item .ss-meta { color: #86868b; font-size: 11.5px; text-align: right; }
+
+    .note {
+        margin-top: 16px; font-size: 12px; color: #6e6e73; line-height: 1.75;
+        padding: 14px 18px; background: #fff; border: 1px solid #e8e8ed; border-radius: 14px;
+    }
+    .note strong { color: #1d1d1f; }
+</style>
+</head>
+<body>
+<div class="page">
+
+    <h1>Apple 产品时间轴 · 真实 RSS Agent 版</h1>
+    <div class="subtitle">
+        Agent 实时抓取 MacRumors / 9to5Mac / Apple Newsroom RSS，动态修正产品状态 · 当前时间自动跟随系统日期
+    </div>
+
+    <div class="agent-bar">
+        <span class="agent-dot" id="agentDot"></span>
+        <span class="agent-label">Apple 情报 Agent</span>
+        <span class="agent-meta" id="agentMeta">等待首次同步…</span>
+        <div class="agent-actions">
+            <!-- <button class="primary" id="syncBtn">立即同步</button>
+            <button id="clearFeedBtn">清空资讯</button> -->
+        </div>
+    </div>
+
+    <div class="feed-panel" id="feedPanel">
+        <div class="feed-title">实时资讯</div>
+        <div id="feedList">
+            <div class="feed-item" style="color:#86868b;justify-content:center;">点击“立即同步”从 RSS 源拉取最新事件</div>
+        </div>
+    </div>
+
+    <div class="controls" id="controls">
+        <button data-filter="all" class="active">全部</button>
+        <button data-filter="released">已发布</button>
+        <button data-filter="predicted">预测 / 待定</button>
+    </div>
+
+    <div class="legend" id="legend"></div>
+
+    <div class="timeline-wrap">
+        <div class="timeline-inner">
+            <div class="axis" id="axis"></div>
+            <div class="grid-layer" id="gridLayer"></div>
+            <div class="rows" id="rows"></div>
+            <div class="today-layer">
+                <div class="today-line" id="todayLine">
+                    <span class="today-tag" id="todayTag"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+        <div class="info-empty">点击产品条形查看详情 · Agent 的动态修正会同步反映在这里</div>
+    </div>
+
+    <div class="note">
+        <strong>Agent 真实性说明：</strong>
+        本页面的 Agent 通过 AllOrigins 公共 CORS 代理抓取以下 RSS 源：
+        MacRumors（<code>feeds.macrumors.com/MacRumors-Mac</code>）、
+        9to5Mac（<code>9to5mac.com/feed</code>）、
+        Apple Newsroom（<code>apple.com/newsroom/rss-feed.rss</code>）。
+        抓取后用关键词规则匹配产品与事件类型，并覆盖时间轴状态。
+        <br>
+        <strong>时间真实性：</strong>当前时间取自浏览器 <code>new Date()</code>，今天竖线、状态判断、预测分级都会随系统日期自动变化。
+        <br>
+        <strong>回退机制：</strong>如果代理不可用或 RSS 解析失败，页面会保留内置的演示事件，并在 Agent 状态条显示错误提示。
+    </div>
+
+</div>
+
+<script>
+/* ============================================================
+   动态当前时间（每次页面加载时实时计算）
+   ============================================================ */
+const NOW = (() => {
+    const d = new Date();
+    return { y: d.getFullYear(), m: d.getMonth() + 1, d: d.getDate() };
+})();
+
+/* ============================================================
+   时间基准
+   ============================================================ */
+const START_YEAR = 2020, END_YEAR = 2031;
+const TOTAL_MONTHS = (END_YEAR - START_YEAR) * 12;
+
+/* ============================================================
+   静态基线数据（精简版，保留核心字段）
+   ============================================================ */
+const BASE_DATA = [
+    /* MacBook Air */
+    { p:'MacBook Air', d:'2020-03', m:'13"', c:'Intel', s:'Intel' },
+    { p:'MacBook Air', d:'2020-11', m:'13.3"', c:'M1', s:'M1' },
+    { p:'MacBook Air', d:'2022-06', m:'13.6"', c:'M2', s:'M2' },
+    { p:'MacBook Air', d:'2023-06', m:'15.3"', c:'M2', s:'M2' },
+    { p:'MacBook Air', d:'2024-03', m:'13.6"/15.3"', c:'M3', s:'M3' },
+    { p:'MacBook Air', d:'2025-03', m:'13.6"/15.3"', c:'M4', s:'M4' },
+    { p:'MacBook Air', d:'2026-03', m:'13.6"/15.3"', c:'M5', s:'M5' },
+    { p:'MacBook Air', d:'2027-03', m:'13.6"/15.3"', c:'M6', s:'M6' },
+    { p:'MacBook Air', d:'2028-03', m:'13.6"/15.3"', c:'M7', s:'M7' },
+    { p:'MacBook Air', d:'2029-03', m:'13.6"/15.3"', c:'M8', s:'M8' },
+    { p:'MacBook Air', d:'2030-03', m:'13.6"/15.3"', c:'M9', s:'M9' },
+
+    /* MacBook Pro */
+    { p:'MacBook Pro', d:'2020-05', m:'13"', c:'Intel', s:'Intel' },
+    { p:'MacBook Pro', d:'2020-11', m:'13"', c:'M1', s:'M1' },
+    { p:'MacBook Pro', d:'2021-11', m:'14"/16"', c:'M1 Pro / Max', s:'M1' },
+    { p:'MacBook Pro', d:'2022-06', m:'13"', c:'M2', s:'M2' },
+    { p:'MacBook Pro', d:'2023-01', m:'14"/16"', c:'M2 Pro / Max', s:'M2' },
+    { p:'MacBook Pro', d:'2023-10', m:'14"/16"', c:'M3 / Pro / Max', s:'M3' },
+    { p:'MacBook Pro', d:'2024-10', m:'14"/16"', c:'M4 / Pro / Max', s:'M4' },
+    { p:'MacBook Pro', d:'2025-10', m:'14"/16"', c:'M5', s:'M5' },
+    { p:'MacBook Pro', d:'2026-03', m:'14"/16"', c:'M5 Pro / Max', s:'M5' },
+    { p:'MacBook Pro', d:'2026-10', m:'14"/16"', c:'M6', s:'M6' },
+    { p:'MacBook Pro', d:'2027-10', m:'14"/16"', c:'M7 Pro / Max', s:'M7' },
+
+    /* Mac mini */
+    { p:'Mac mini', d:'2020-11', m:'标准机身', c:'M1', s:'M1' },
+    { p:'Mac mini', d:'2023-01', m:'标准机身', c:'M2 / M2 Pro', s:'M2' },
+    { p:'Mac mini', d:'2024-10', m:'标准机身', c:'M4 / M4 Pro', s:'M4' },
+    { p:'Mac mini', d:'2026-08', m:'标准机身', c:'M6 / M5 Pro', s:'M6' },
+    { p:'Mac mini', d:'2028-10', m:'标准机身', c:'M8 / M7 Pro', s:'M8' },
+    { p:'Mac mini', d:'2030-10', m:'标准机身', c:'M10 / M9 Pro', s:'M10' },
+
+    /* Mac Studio */
+    { p:'Mac Studio', d:'2022-03', m:'标准机身', c:'M1 Max / Ultra', s:'M1' },
+    { p:'Mac Studio', d:'2023-06', m:'标准机身', c:'M2 Max / Ultra', s:'M2' },
+    { p:'Mac Studio', d:'2025-03', m:'标准机身', c:'M4 Max / M3 Ultra', s:'M4' },
+    { p:'Mac Studio', d:'2026-08', m:'标准机身', c:'M5 Max / Ultra', s:'M5' },
+    { p:'Mac Studio', d:'2027-10', m:'标准机身', c:'M7 Max', s:'M7' },
+    { p:'Mac Studio', d:'2028-03', m:'标准机身', c:'M7 Ultra', s:'M7' },
+    { p:'Mac Studio', d:'2029-10', m:'标准机身', c:'M9 Max / Ultra', s:'M9' },
+
+    /* Mac Pro */
+    { p:'Mac Pro', d:'2023-06', m:'塔式机身', c:'M2 Ultra', s:'M2' },
+
+    /* iMac */
+    { p:'iMac', d:'2020-08', m:'27"', c:'Intel', s:'Intel' },
+    { p:'iMac', d:'2021-05', m:'24"', c:'M1', s:'M1' },
+    { p:'iMac', d:'2023-10', m:'24"', c:'M3', s:'M3' },
+    { p:'iMac', d:'2024-10', m:'24"', c:'M4', s:'M4' },
+    { p:'iMac', d:'2026-10', m:'24"', c:'M6', s:'M6' },
+    { p:'iMac', d:'2028-10', m:'24"', c:'M8', s:'M8' },
+
+    /* iPad */
+    { p:'iPad', d:'2020-09', m:'10.2"', c:'A12', s:'A' },
+    { p:'iPad', d:'2021-09', m:'10.2"', c:'A13', s:'A' },
+    { p:'iPad', d:'2022-10', m:'10.9"', c:'A14', s:'A' },
+    { p:'iPad', d:'2025-03', m:'11"', c:'A16', s:'A' },
+    { p:'iPad', d:'2027-03', m:'11"', c:'A18', s:'A' },
+
+    /* iPad mini */
+    { p:'iPad mini', d:'2021-09', m:'8.3"', c:'A15', s:'A' },
+    { p:'iPad mini', d:'2024-10', m:'8.3"', c:'A17 Pro', s:'A' },
+    { p:'iPad mini', d:'2027-03', m:'8.3"', c:'A19 Pro', s:'A' },
+
+    /* iPad Air */
+    { p:'iPad Air', d:'2020-09', m:'10.9"', c:'A14', s:'A' },
+    { p:'iPad Air', d:'2022-03', m:'10.9"', c:'M1', s:'M1' },
+    { p:'iPad Air', d:'2024-05', m:'11"/13"', c:'M2', s:'M2' },
+    { p:'iPad Air', d:'2025-03', m:'11"/13"', c:'M3', s:'M3' },
+    { p:'iPad Air', d:'2026-03', m:'11"/13"', c:'M4', s:'M4' },
+    { p:'iPad Air', d:'2027-03', m:'11"/13"', c:'M5', s:'M5' },
+    { p:'iPad Air', d:'2028-10', m:'11"/13"', c:'M6', s:'M6' },
+    { p:'iPad Air', d:'2030-03', m:'11"/13"', c:'M7', s:'M7' },
+
+    /* iPad Pro */
+    { p:'iPad Pro', d:'2020-03', m:'11"/12.9"', c:'A12Z', s:'A' },
+    { p:'iPad Pro', d:'2021-04', m:'11"/12.9"', c:'M1', s:'M1' },
+    { p:'iPad Pro', d:'2022-10', m:'11"/12.9"', c:'M2', s:'M2' },
+    { p:'iPad Pro', d:'2024-05', m:'11"/13"', c:'M4', s:'M4' },
+    { p:'iPad Pro', d:'2025-10', m:'11"/13"', c:'M5', s:'M5' },
+    { p:'iPad Pro', d:'2027-03', m:'11"/13"', c:'M6', s:'M6' },
+    { p:'iPad Pro', d:'2028-10', m:'11"/13"', c:'M7', s:'M7' },
+    { p:'iPad Pro', d:'2030-03', m:'11"/13"', c:'M8', s:'M8' },
+
+    /* iPhone */
+    { p:'iPhone', d:'2020-04', m:'SE 第二代', c:'A13', s:'A', lbl:'SE 2' },
+    { p:'iPhone', d:'2020-10', m:'12 系列', c:'A14', s:'A', lbl:'iPhone 12' },
+    { p:'iPhone', d:'2021-09', m:'13 系列', c:'A15', s:'A', lbl:'iPhone 13' },
+    { p:'iPhone', d:'2022-03', m:'SE 第三代', c:'A15', s:'A', lbl:'SE 3' },
+    { p:'iPhone', d:'2022-09', m:'14 系列', c:'A15 / A16', s:'A', lbl:'iPhone 14' },
+    { p:'iPhone', d:'2023-09', m:'15 系列', c:'A16 / A17 Pro', s:'A', lbl:'iPhone 15' },
+    { p:'iPhone', d:'2024-09', m:'16 系列', c:'A18 / A18 Pro', s:'A', lbl:'iPhone 16' },
+    { p:'iPhone', d:'2025-02', m:'16e', c:'A18', s:'A', lbl:'iPhone 16e' },
+    { p:'iPhone', d:'2025-09', m:'17 / Air / 17 Pro', c:'A19 / A19 Pro', s:'A', lbl:'iPhone 17' },
+    { p:'iPhone', d:'2026-03', m:'17e', c:'A19', s:'A', lbl:'iPhone 17e' },
+    { p:'iPhone', d:'2026-09', m:'Duo / 17 Pro', c:'A20 Pro', s:'A', lbl:'iPhone Duo' },
+    { p:'iPhone', d:'2027-03', m:'18e', c:'A20', s:'A', lbl:'iPhone 18e' },
+    { p:'iPhone', d:'2027-10', m:'Duo 2 / 18 Pro', c:'A21 Pro', s:'A', lbl:'iPhone Duo 2' },
+    { p:'iPhone', d:'2029-03', m:'19e', c:'A21', s:'A', lbl:'iPhone 19e' },
+    { p:'iPhone', d:'2029-10', m:'Duo 3 / 19 Pro', c:'A22 Pro', s:'A', lbl:'iPhone Duo 3' },
+    { p:'iPhone', d:'2030-03', m:'20e', c:'A22', s:'A', lbl:'iPhone 20e' },
+
+    /* Apple Watch */
+    { p:'Apple Watch', d:'2020-09', m:'Series 6 / SE', c:'S6 / S5', s:'S', lbl:'Watch S6' },
+    { p:'Apple Watch', d:'2021-09', m:'Series 7', c:'S7', s:'S', lbl:'Watch S7' },
+    { p:'Apple Watch', d:'2022-09', m:'Series 8 / Ultra', c:'S8', s:'S', lbl:'Watch S8 / Ultra' },
+    { p:'Apple Watch', d:'2023-09', m:'Series 9 / Ultra 2', c:'S9', s:'S', lbl:'Watch S9 / Ultra 2' },
+    { p:'Apple Watch', d:'2024-09', m:'Series 10', c:'S10', s:'S', lbl:'Watch S10' },
+    { p:'Apple Watch', d:'2025-09', m:'Series 11 / Ultra 3 / SE 3', c:'S10', s:'S', lbl:'Watch S11 / Ultra 3' },
+    { p:'Apple Watch', d:'2026-09', m:'Series 12 / Ultra 4', c:'S11', s:'S', lbl:'Watch S12 / Ultra 4' },
+    { p:'Apple Watch', d:'2027-10', m:'Series 13 / Ultra 5', c:'S12', s:'S', lbl:'Watch S13 / Ultra 5' },
+    { p:'Apple Watch', d:'2028-10', m:'Series 14 / Ultra 6 / SE 4', c:'S13', s:'S', lbl:'Watch S14 / Ultra 6' }
+];
+
+/* ============================================================
+   RSS 源配置
+   ============================================================ */
+const RSS_SOURCES = [
+    { name: 'MacRumors', url: 'http://feeds.macrumors.com/MacRumors-Mac' },
+    { name: '9to5Mac',  url: 'https://9to5mac.com/feed' },
+    { name: 'Apple Newsroom', url: 'https://www.apple.com/newsroom/rss-feed.rss' }
+];
+
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+/* ============================================================
+   真实 Agent：抓取 RSS → 解析 → 关键词匹配 → 生成事件
+   ============================================================ */
+// async function fetchAgentEvents() {
+//     const events = [];
+
+//     for (const src of RSS_SOURCES) {
+//         try {
+//             const proxyUrl = CORS_PROXY + encodeURIComponent(src.url);
+//             const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
+//             if (!res.ok) throw new Error(`HTTP ${res.status}`);
+//             const xml = await res.text();
+//             const doc = new DOMParser().parseFromString(xml, 'text/xml');
+
+//             const items = [...doc.querySelectorAll('item')].slice(0, 25);
+//             items.forEach(item => {
+//                 const title = (item.querySelector('title')?.textContent || '').trim();
+//                 const desc  = (item.querySelector('description')?.textContent || '').trim();
+//                 const link  = (item.querySelector('link')?.textContent || '').trim();
+//                 const pub   = (item.querySelector('pubDate')?.textContent || '').trim();
+//                 const text  = (title + ' ' + desc).toLowerCase();
+
+//                 const evt = classifyArticle(title, desc, text, link, src.name, pub);
+//                 if (evt) events.push(evt);
+//             });
+//         } catch (err) {
+//             console.warn(`RSS 抓取失败：${src.name}`, err.message);
+//         }
+//     }
+
+//     // 按时间倒序，只保留最近 10 条
+//     events.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
+//     return events.slice(0, 10);
+// }
+
+/////////////////// 
+
+
+let AGENT_EVENTS = [];
+
+async function fetchAgentEvents() {
+    try {
+        // 加时间戳查询参数，绕过 GitHub Pages 的 10 分钟缓存
+        const res = await fetch(`./events.json?v=${Date.now()}`, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        AGENT_EVENTS = data.events || [];
+
+        // 更新时间轴
+        DATA = buildMergedData(AGENT_EVENTS);
+        buildAxis();
+        buildRows();
+        buildLegend();
+        buildTodayLine();
+        updateVisibility();
+        renderFeed(AGENT_EVENTS);
+
+        // 更新状态条
+        const meta = document.getElementById('agentMeta');
+        if (data.syncedAt) {
+            const t = new Date(data.syncedAt).toLocaleString('zh-CN', { hour12: false }).slice(0, 16);
+            meta.textContent = `上次同步：${t} · ${AGENT_EVENTS.length} 条 Apple 相关事件（GitHub Actions 每日自动更新）`;
+        } else {
+            meta.textContent = 'events.json 尚未生成，等待首次 Actions 运行';
+        }
+    } catch (err) {
+        console.error('加载 events.json 失败', err);
+        document.getElementById('agentMeta').textContent =
+            `events.json 加载失败：${err.message} · 时间轴显示基线数据`;
+        // 失败时至少保证时间轴渲染基线数据
+        DATA = buildMergedData([]);
+        buildAxis();
+        buildRows();
+        buildLegend();
+        buildTodayLine();
+        updateVisibility();
+    }
+}
+
+
+///////////////////
+
+
+
+/* 关键词规则分类 */
+function classifyArticle(title, desc, text, link, sourceName, pubDate) {
+    const productMap = [
+        { keys: ['macbook pro'], product: 'MacBook Pro' },
+        { keys: ['macbook air'], product: 'MacBook Air' },
+        { keys: ['mac mini'], product: 'Mac mini' },
+        { keys: ['mac studio'], product: 'Mac Studio' },
+        { keys: ['imac'], product: 'iMac' },
+        { keys: ['ipad pro'], product: 'iPad Pro' },
+        { keys: ['ipad air'], product: 'iPad Air' },
+        { keys: ['ipad mini'], product: 'iPad mini' },
+        { keys: ['iphone'], product: 'iPhone' },
+        { keys: ['apple watch'], product: 'Apple Watch' }
+    ];
+
+    let product = null;
+    for (const pm of productMap) {
+        if (pm.keys.some(k => text.includes(k))) { product = pm.product; break; }
+    }
+    if (!product) return null;
+
+    // 尝试从标题中提取年份/月份
+    const dateMatch = title.match(/(20\d{2})/);
+    const year = dateMatch ? parseInt(dateMatch[1]) : NOW.y;
+
+    let eventType = 'rumor';
+    let tagText = '传闻';
+    if (/cancel|discontinued|scrapped|终止|取消/i.test(text)) { eventType = 'cancelled'; tagText = '已取消'; }
+    else if (/delay|postpone|推迟|延期/i.test(text)) { eventType = 'delayed'; tagText = '已推迟'; }
+    else if (/announce|confirmed|官宣|正式发布/i.test(text)) { eventType = 'confirmed'; tagText = '已官宣'; }
+    else if (/release|launch|available|开售|上市/i.test(text) && year <= NOW.y) { eventType = 'released'; tagText = '已发布'; }
+
+    // 构造一个粗略的日期（用于时间轴定位）
+    const monthMatch = title.match(/(january|february|march|april|may|june|july|august|september|october|november|december)/i);
+    const monthMap = { january:1, february:2, march:3, april:4, may:5, june:6, july:7, august:8, september:9, october:10, november:11, december:12 };
+    const month = monthMatch ? monthMap[monthMatch[1].toLowerCase()] : NOW.m;
+
+    const eventDate = `${year}-${String(month).padStart(2,'0')}`;
+
+    const cleanDesc = desc.replace(/<[^>]*>/g, '').slice(0, 160);
+
+    return {
+        id: 'rss-' + link + '-' + pubDate,
+        time: pubDate ? new Date(pubDate).toISOString().slice(0,10) : eventDate,
+        text: cleanDesc || title,
+        source: sourceName,
+        tag: eventType,
+        tagText,
+        link,
+        patch: {
+            match: { p: product, d: eventDate },
+            apply: {
+                status: eventType,
+                v: `Agent 抓取：${cleanDesc || title}`,
+                src: `${sourceName} RSS`
+            }
+        }
+    };
+}
+
+/* ============================================================
+   合并逻辑
+   ============================================================ */
+// let AGENT_EVENTS = [];
+
+// function buildMergedData(events) {
+//     const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
+
+//     events.forEach(evt => {
+//         if (!evt.patch) return;
+//         const { match, apply } = evt.patch;
+//         const target = data.find(d => d.p === match.p && d.d === match.d);
+//         if (target) {
+//             Object.assign(target, apply);
+//             target._agentPatched = true;
+//             target._agentNote = {
+//                 time: evt.time, text: evt.text, source: evt.source,
+//                 tag: evt.tag, tagText: evt.tagText, link: evt.link
+//             };
+//         }
+//     });
+
+//     return data;
+// }
+
+
+/////////////////////
+
+function buildMergedData(events) {
+    const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
+
+    events.forEach(evt => {
+        if (!evt.patch) return;
+        const { match, apply } = evt.patch;
+
+        // date 为 null 时，只挂载情报到该产品线的第一条，不改条形状态
+        if (match.d === null) {
+            const anchor = data.find(d => d.p === match.p);
+            if (anchor) {
+                anchor._agentNote = {
+                    time: evt.time || '',
+                    text: evt.text || '',
+                    source: evt.source || '',
+                    tag: evt.tag || 'rumor',
+                    tagText: evt.tagText || '资讯',
+                    link: evt.link || ''
+                };
+            }
+            return;
+        }
+
+        const target = data.find(d => d.p === match.p && d.d === match.d);
+        if (target) {
+            Object.assign(target, apply);
+            target._agentPatched = true;
+            target._agentNote = { /* ... */ };
+        }
+    });
+
+    return data;
+}
+
+
+/////////////////////
+
+let DATA = buildMergedData([]);
+
+/* ============================================================
+   系列元数据
+   ============================================================ */
+const SERIES_COLORS = {
+    Intel:'#86868b', M1:'#0071e3', M2:'#34a853', M3:'#ff9500', M4:'#af52de',
+    M5:'#c2185b', M6:'#00b8d4', M7:'#5856d6', M8:'#a2845e',
+    M9:'#8e8e93', M10:'#6b7280', A:'#ff6482', S:'#b8860b'
+};
+const SERIES_LABEL = {
+    Intel:'Intel', M1:'M1 系列', M2:'M2 系列', M3:'M3 系列', M4:'M4 系列',
+    M5:'M5 系列', M6:'M6 系列', M7:'M7 系列', M8:'M8 系列', M9:'M9 系列',
+    M10:'M10 系列', A:'A 系列', S:'S 系列（Watch）'
+};
+const STATUS_TEXT = {
+    released:'已发布', confirmed:'高置信预测（已官宣）', predicted:'预测',
+    delayed:'已推迟 / 待定', cancelled:'已取消 / 项目终止'
+};
+const STATUS_CLS = {
+    released:'st-released', confirmed:'st-confirmed', predicted:'st-predicted',
+    delayed:'st-delayed', cancelled:'st-cancelled'
+};
+const CONF_TEXT = { high:'近期 · 高可能', mid:'中期 · 中可能', low:'远期 · 低可能 / 路线图推演' };
+const CONF_CLS = { high:'conf-high', mid:'conf-mid', low:'conf-low' };
+
+/* ============================================================
+   时间工具
+   ============================================================ */
+function toIdx(dateStr) {
+    const [y, m] = dateStr.split('-').map(Number);
+    return (y - START_YEAR) * 12 + (m - 1);
+}
+function idxToPct(idx) { return idx / TOTAL_MONTHS * 100; }
+function idxToDate(idx) {
+    const y = START_YEAR + Math.floor(idx / 12);
+    const m = idx % 12 + 1;
+    return y + '-' + String(m).padStart(2, '0');
+}
+function fmtDate(dateStr) {
+    const [y, m] = dateStr.split('-').map(Number);
+    return y + ' 年 ' + m + ' 月';
+}
+function statusOf(dateStr) {
+    const [y, m] = dateStr.split('-').map(Number);
+    const ym = y * 12 + (m - 1);
+    const nowYm = NOW.y * 12 + (NOW.m - 1);
+    if (ym < nowYm) return 'released';
+    if (ym <= nowYm + 3) return 'confirmed';
+    return 'predicted';
+}
+function confOf(dateStr) {
+    const [y, m] = dateStr.split('-').map(Number);
+    const ym = y * 12 + (m - 1);
+    const diff = ym - (NOW.y * 12 + NOW.m - 1);
+    if (diff <= 9)  return 'high';
+    if (diff <= 18) return 'mid';
+    return 'low';
+}
+
+/* ============================================================
+   状态
+   ============================================================ */
+let activeFilter = 'all';
+let activeSeries = null;
+let activeBarKey = null;
+let bars = [];
+
+/* ============================================================
+   构建时间轴（可重建）
+   ============================================================ */
+function buildAxis() {
+    const axis = document.getElementById('axis');
+    const grid = document.getElementById('gridLayer');
+    axis.innerHTML = ''; grid.innerHTML = '';
+    for (let y = START_YEAR; y <= END_YEAR - 1; y++) {
+        const pct = idxToPct(toIdx(y + '-01'));
+        const mark = document.createElement('div');
+        mark.className = 'year-mark';
+        mark.style.left = pct + '%';
+        if (y === START_YEAR) mark.style.transform = 'translateX(0)';
+        mark.textContent = y;
+        axis.appendChild(mark);
+        const tick = document.createElement('div');
+        tick.className = 'tick'; tick.style.left = pct + '%';
+        axis.appendChild(tick);
+        const line = document.createElement('div');
+        line.className = 'grid-line'; line.style.left = pct + '%';
+        grid.appendChild(line);
+    }
+}
+
+function buildRows() {
+    const rowsEl = document.getElementById('rows');
+    rowsEl.innerHTML = '';
+    bars = [];
+    const groups = {};
+    DATA.forEach(d => { (groups[d.p] = groups[d.p] || []).push(d); });
+
+    Object.keys(groups).forEach(product => {
+        const row = document.createElement('div');
+        row.className = 'product-row';
+        const label = document.createElement('div');
+        label.className = 'product-label';
+        label.textContent = product;
+        row.appendChild(label);
+
+        const track = document.createElement('div');
+        track.className = 'track';
+
+        const items = groups[product].slice().sort((a, b) => toIdx(a.d) - toIdx(b.d));
+
+        items.forEach((item, i) => {
+            const startIdx = toIdx(item.d);
+            let endIdx = (i < items.length - 1)
+                ? toIdx(items[i + 1].d)
+                : Math.min(startIdx + 24, TOTAL_MONTHS);
+            if (endIdx <= startIdx) endIdx = startIdx + 3;
+            if (endIdx > TOTAL_MONTHS) endIdx = TOTAL_MONTHS;
+
+            const status = item.status || statusOf(item.d);
+            const color  = SERIES_COLORS[item.s] || '#86868b';
+            const left   = idxToPct(startIdx);
+            const width  = Math.max(idxToPct(endIdx) - left, 0.45);
+            const barKey = item.p + '||' + item.d;
+            const displayLabel = item.lbl || item.c;
+
+            const bar = document.createElement('div');
+            bar.className = 'bar status-' + status;
+            bar.style.left  = left + '%';
+            bar.style.width = width + '%';
+            bar.style.borderColor = color;
+            bar.style.background  = color + '1f';
+            bar.dataset.series = item.s;
+            bar.dataset.status = status;
+            bar.dataset.barKey = barKey;
+            bar.title = `${displayLabel}（${item.m}）\n芯片：${item.c} · ${item.d} → ${idxToDate(endIdx)}（${STATUS_TEXT[status]}）`;
+
+            const lbl = document.createElement('span');
+            lbl.className = 'bar-label';
+            lbl.textContent = displayLabel;
+            bar.appendChild(lbl);
+
+            bar.addEventListener('click', e => {
+                e.stopPropagation();
+                if (activeBarKey === barKey) {
+                    activeBarKey = null;
+                    clearInfo();
+                } else {
+                    activeBarKey = barKey;
+                    activeSeries = null;
+                    showProductInfo(item, idxToDate(endIdx), i === items.length - 1);
+                }
+                updateVisibility();
+            });
+
+            track.appendChild(bar);
+            bars.push({ el: bar, item, barKey });
+        });
+
+        row.appendChild(track);
+        rowsEl.appendChild(row);
+    });
+}
+
+function buildLegend() {
+    const legend = document.getElementById('legend');
+    legend.innerHTML = '';
+    Object.keys(SERIES_COLORS).forEach(key => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.dataset.series = key;
+        item.innerHTML = `<span class="legend-dot" style="background:${SERIES_COLORS[key]}"></span>${SERIES_LABEL[key]}`;
+        item.addEventListener('click', e => {
+            e.stopPropagation();
+            if (activeSeries === key) {
+                activeSeries = null;
+                activeBarKey = null;
+                clearInfo();
+            } else {
+                activeSeries = key;
+                activeBarKey = null;
+                showSeriesInfo(key);
+            }
+            updateVisibility();
+        });
+        legend.appendChild(item);
+    });
+}
+
+function buildTodayLine() {
+    const todayIdx = toIdx(NOW.y + '-' + String(NOW.m).padStart(2, '0')) + (NOW.d - 1) / 31;
+    document.getElementById('todayLine').style.left = (todayIdx / TOTAL_MONTHS * 100) + '%';
+    document.getElementById('todayTag').textContent =
+        `今天 · ${NOW.y}.${String(NOW.m).padStart(2,'0')}.${String(NOW.d).padStart(2,'0')}`;
+}
+
+function updateVisibility() {
+    bars.forEach(({ el, item, barKey }) => {
+        const s  = item.s;
+        const st = el.dataset.status;
+
+        let visible = true;
+        if (activeBarKey) {
+            visible = (barKey === activeBarKey);
+        } else if (activeSeries) {
+            visible = (s === activeSeries);
+        }
+
+        if (activeFilter !== 'all') {
+            if (activeFilter === 'released' && st !== 'released') visible = false;
+            if (activeFilter === 'predicted' && st === 'released') visible = false;
+        }
+
+        el.classList.toggle('dimmed', !visible);
+        el.classList.toggle('hl', visible && (activeSeries !== null || activeBarKey !== null));
+    });
+
+    document.querySelectorAll('.legend-item').forEach(el => {
+        el.classList.toggle('active', el.dataset.series === activeSeries);
+    });
+}
+
+/* ============================================================
+   信息面板
+   ============================================================ */
+function showProductInfo(item, endDate, estimatedEnd) {
+    const status = item.status || statusOf(item.d);
+    const panel = document.getElementById('infoPanel');
+    const displayName = item.lbl || item.p;
+
+    let statusBadge = `<span class="badge ${STATUS_CLS[status]}">${STATUS_TEXT[status]}</span>`;
+    let confBadge = '';
+    if (status === 'predicted') {
+        const conf = item.conf || confOf(item.d);
+        confBadge = `<span class="confidence-tag ${CONF_CLS[conf]}">${CONF_TEXT[conf]}</span>`;
+    }
+
+    let agentBlock = '';
+    if (item._agentNote) {
+        agentBlock = `
+            <div class="agent-note">
+                <div class="agent-note-title">Agent 实时研判</div>
+                <div class="agent-note-body">
+                    ${item._agentNote.text}<br>
+                    <span style="color:#86868b;font-size:11.5px;">
+                        来源：${item._agentNote.source} · ${item._agentNote.time}
+                        ${item._agentNote.link ? ` · <a href="${item._agentNote.link}" target="_blank" rel="noopener" style="color:#0071e3;">原文</a>` : ''}
+                    </span>
+                </div>
+            </div>
+        `;
+    } else {
+        agentBlock = `
+            <div class="agent-note">
+                <div class="agent-note-title">背景信息</div>
+                <div class="agent-note-body" style="color:#86868b;">
+                    暂无 Agent 抓取到的最新事件，状态基于基线路线图判断。
+                </div>
+            </div>
+        `;
+    }
+
+    panel.innerHTML = `
+        <div class="info-head">
+            <span class="info-title">${displayName}</span>
+            <span class="badge st-series">${item.p}</span>
+            ${statusBadge}${confBadge}
+        </div>
+        <div class="info-grid">
+            <div class="info-item"><span class="k">型号 / 尺寸</span><span class="v">${item.m}</span></div>
+            <div class="info-item"><span class="k">硬件芯片</span><span class="v">${item.c}</span></div>
+            <div class="info-item"><span class="k">芯片系列</span><span class="v">${SERIES_LABEL[item.s] || item.s}</span></div>
+            <div class="info-item"><span class="k">发布时间</span><span class="v">${fmtDate(item.d)}</span></div>
+            <div class="info-item"><span class="k">接替 / 退场</span><span class="v">${fmtDate(endDate)}${estimatedEnd ? '（推算）' : ''}</span></div>
+        </div>
+        ${agentBlock}
+    `;
+}
+
+function showSeriesInfo(series) {
+    const items = DATA.filter(d => d.s === series);
+    const panel = document.getElementById('infoPanel');
+    const label = SERIES_LABEL[series] || series;
+
+    const cnt = st => items.filter(d => (d.status || statusOf(d.d)) === st).length;
+
+    const rowsHtml = items.map(d => {
+        const st = d.status || statusOf(d.d);
+        const conf = (st === 'predicted')
+            ? `<span class="confidence-tag ${CONF_CLS[d.conf || confOf(d.d)]}" style="font-size:10px;padding:1px 7px;">${CONF_TEXT[d.conf || confOf(d.d)]}</span>`
+            : '';
+        const displayName = d.lbl || d.p;
+        return `
+            <div class="series-summary-item">
+                <span class="ss-product">${displayName} · ${d.m}</span>
+                <span class="ss-meta">${d.c} · ${d.d} ${conf}</span>
+            </div>
+        `;
+    }).join('');
+
+    panel.innerHTML = `
+        <div class="info-head">
+            <span class="info-title">${label} 汇总</span>
+            <span class="badge st-series">${items.length} 款</span>
+            <span class="badge st-released">已发布 ${cnt('released')}</span>
+            ${cnt('confirmed') ? `<span class="badge st-confirmed">官宣 ${cnt('confirmed')}</span>` : ''}
+            ${cnt('delayed') ? `<span class="badge st-delayed">推迟 ${cnt('delayed')}</span>` : ''}
+            ${cnt('cancelled') ? `<span class="badge st-cancelled">取消 ${cnt('cancelled')}</span>` : ''}
+            ${cnt('predicted') ? `<span class="badge st-predicted">预测 ${cnt('predicted')}</span>` : ''}
+        </div>
+        <div class="series-summary-grid">${rowsHtml}</div>
+    `;
+}
+
+function clearInfo() {
+    document.getElementById('infoPanel').innerHTML =
+        '<div class="info-empty">点击产品条形查看详情 · Agent 的动态修正会同步反映在这里</div>';
+}
+
+/* ============================================================
+   资讯流渲染
+   ============================================================ */
+const FEED_TAG_CLS = {
+    released:'ft-released', confirmed:'ft-confirmed', delayed:'ft-delayed',
+    cancelled:'ft-cancelled', rumor:'ft-rumor'
+};
+
+function renderFeed(events) {
+    const list = document.getElementById('feedList');
+    if (!events.length) {
+        list.innerHTML = '<div class="feed-item" style="color:#86868b;justify-content:center;">暂无新事件（RSS 源可能暂无 Apple 相关更新）</div>';
+        return;
+    }
+    list.innerHTML = events.map(evt => `
+        <div class="feed-item">
+            <span class="feed-time">${evt.time || '—'}</span>
+            <span class="feed-text">
+                ${evt.text}
+                <span class="feed-tag ${FEED_TAG_CLS[evt.tag] || ''}">${evt.tagText}</span>
+                <span class="feed-source">— ${evt.source}</span>
+                ${evt.link ? ` · <a href="${evt.link}" target="_blank" rel="noopener" style="color:#0071e3;font-size:11px;">原文</a>` : ''}
+            </span>
+        </div>
+    `).join('');
+}
+
+/* ============================================================
+   同步逻辑（真实抓取）
+   ============================================================ */
+// async function syncAgent() {
+//     const btn = document.getElementById('syncBtn');
+//     const dot = document.getElementById('agentDot');
+//     const meta = document.getElementById('agentMeta');
+
+//     btn.disabled = true;
+//     btn.textContent = '抓取中…';
+//     dot.classList.remove('error');
+//     meta.textContent = '正在从 RSS 源拉取最新资讯…';
+
+//     try {
+//         const events = await fetchAgentEvents();
+//         AGENT_EVENTS = events;
+
+//         // 重建合并数据与时间轴
+//         DATA = buildMergedData(events);
+//         buildAxis();
+//         buildRows();
+//         buildLegend();
+//         buildTodayLine();
+//         updateVisibility();
+
+//         renderFeed(events);
+
+//         const now = new Date();
+//         meta.textContent =
+//             `上次同步：${now.toLocaleString('zh-CN', { hour12:false }).slice(0,16)} · ` +
+//             `抓取 ${events.length} 条 Apple 相关事件 · 当前日期 ${NOW.y}-${String(NOW.m).padStart(2,'0')}-${String(NOW.d).padStart(2,'0')}`;
+
+//         if (events.length === 0) {
+//             meta.textContent += ' （RSS 源未返回 Apple 相关条目，状态仍基于基线判断）';
+//         }
+//     } catch (err) {
+//         console.error('Agent 同步失败', err);
+//         dot.classList.add('error');
+//         meta.textContent = `同步失败：${err.message} · 时间轴保持基线数据`;
+//     } finally {
+//         btn.disabled = false;
+//         btn.textContent = '立即同步';
+//     }
+// }
+
+/* ============================================================
+   事件绑定
+   ============================================================ */
+function bindEvents() {
+    document.querySelectorAll('#controls button').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            activeFilter = btn.dataset.filter;
+            document.querySelectorAll('#controls button')
+                .forEach(b => b.classList.toggle('active', b === btn));
+            updateVisibility();
+        });
+    });
+
+    document.getElementById('infoPanel').addEventListener('click', e => e.stopPropagation());
+
+    document.addEventListener('click', () => {
+        if (activeSeries !== null || activeBarKey !== null) {
+            activeSeries = null;
+            activeBarKey = null;
+            clearInfo();
+            updateVisibility();
+        }
+    });
+
+    // document.getElementById('syncBtn').addEventListener('click', e => {
+    //     e.stopPropagation();
+    //     syncAgent();
+    // });
+
+    // document.getElementById('clearFeedBtn').addEventListener('click', e => {
+    //     e.stopPropagation();
+    //     document.getElementById('feedList').innerHTML =
+    //         '<div class="feed-item" style="color:#86868b;justify-content:center;">资讯已清空，点击“立即同步”重新拉取</div>';
+    //     document.getElementById('agentMeta').textContent = '资讯流已清空 · 时间轴保持当前状态';
+    // });
+}
+
+/* ============================================================
+   启动
+   ============================================================ */
+buildAxis();
+buildRows();
+buildLegend();
+buildTodayLine();
+bindEvents();
+updateVisibility();
+// 页面加载后自动尝试同步一次
+// syncAgent();    // ← 旧调用
+fetchAgentEvents();   // ← 新调用，加载 events.json
+</script>
+</body>
+</html>

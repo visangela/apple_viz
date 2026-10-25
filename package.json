@@ -1,0 +1,11 @@
+{
+    "name": "apple-timeline-agent",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "sync": "node scripts/sync-agent.mjs"
+    },
+    "dependencies": {
+        "rss-parser": "^3.13.0"
+    }
+}
