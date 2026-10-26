@@ -2,9 +2,9 @@ name: Sync Apple Timeline Agent
 
 on:
   schedule:
-    # 每天 UTC 01:00 运行（北京时间 09:00）
+    # 每天 UTC 01:17 运行（北京时间 09:17）
     # GitHub Actions 的 cron 使用 UTC，不支持时区后缀
-    - cron: '0 1 * * *'
+    - cron: '17 1 * * *'
   workflow_dispatch:      # 允许手动触发，用于测试
 
 permissions:
@@ -28,6 +28,15 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Keep-alive commit (prevent 60-day inactivity suspension)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          date > .github/last-activity.txt
+          git add .github/last-activity.txt
+          git diff --staged --quiet || git commit -m "chore: keep-alive [skip ci]"
+          git push
 
       - name: Run agent sync
         env:
