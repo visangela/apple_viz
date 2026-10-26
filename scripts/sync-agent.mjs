@@ -52,7 +52,8 @@ const SYSTEM_PROMPT = `你是 Apple 产品路线图分析助手。
 - 没有明确年月时 date 填 "unknown"，不要猜测。
 - 没有提到芯片时 chip 填 "unknown"。
 - 如果文章明确提到芯片型号（如 A20 Pro、M6），必须填入 chip 字段，不要留 "unknown"。
-- 如果文章明确提到尺寸或型号（如 "8.x 英寸 OLED"），填入 model 字段。`;
+- 如果文章明确提到尺寸或型号（如 "8.x 英寸 OLED"），填入 model 字段。
+- 示例输出：{"relevant":true,"product":"iPad mini","event":"confirmed","date":"2026-10","chip":"A20 Pro","model":"8.x\" OLED","summary":"iPad mini 8 预计本周发布，OLED 屏，A20 Pro 芯片"}`;
 
 function buildPrompt(article) {
     return `标题：${article.title}

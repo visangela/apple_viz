@@ -735,11 +735,11 @@ function statusOf(dateStr) {
     const [y, m] = dateStr.split('-').map(Number);
     const ym = y * 12 + (m - 1);
     const nowYm = NOW.y * 12 + (NOW.m - 1);
+    const diff = ym - nowYm;
 
-    if (ym < nowYm - 6) return 'released';   // 历史已确认
-    if (ym < nowYm) return 'missed';         // 刚过窗口，无 Agent 确认 → 跳票/待确认
-    if (ym <= nowYm + 3) return 'confirmed'; // 3 个月内视为已官宣
-    return 'predicted';
+    if (diff < 0) return 'released';      // 过去 → 已发布
+    if (diff <= 3) return 'confirmed';    // 3 个月内 → 官宣窗口
+    return 'predicted';                   // 更远 → 预测
 }
 function confOf(dateStr) {
     const [y, m] = dateStr.split('-').map(Number);
