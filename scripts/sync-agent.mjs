@@ -179,15 +179,6 @@ async function main() {
         return true;
     });
 
-    // const output = {
-    //     syncedAt: new Date().toISOString(),
-    //     events: unique,
-    //     articleCount: batch.length,
-    //     errors: errors.length ? errors : undefined
-    // };
-
-    // await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf8');
-
     ////////////////////
     // main() 末尾，替换原来的 fs.writeFile
     let history = [];
@@ -209,8 +200,8 @@ async function main() {
     // 只保留最近 120 天的事件，避免文件无限增长
     const cutoff = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10);
     const retained = merged.filter(e => {
-        const t = e.pubDate || e.date || '';
-        return t >= cutoff;
+        const t = e.pubDate || e.date;
+        return !t || t >= cutoff;   // 无日期的事件保留，不参与裁剪
     });
 
     const output = {
@@ -219,9 +210,13 @@ async function main() {
         articleCount: batch.length,
         errors: errors.length ? errors : undefined
     };
-    ////////////////////
 
-    console.log(`Wrote ${unique.length} events to ${OUTPUT_FILE}`);
+    await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf8');
+
+    console.log(
+        `Wrote ${retained.length} events to ${OUTPUT_FILE} ` +
+        `(new: ${unique.length}, history: ${history.length}, retained: ${retained.length})`
+    );
 }
 
 main().catch(err => {
