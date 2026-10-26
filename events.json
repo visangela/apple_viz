@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-10-26T02:18:06.783Z",
+  "syncedAt": "2026-10-26T05:13:39.658Z",
   "events": [
     {
       "product": "iPad mini",
@@ -26,7 +26,8 @@
       "event": "released",
       "date": "2026-10-23",
       "chip": null,
-      "summary": "iPhone Duo officially launched at Apple Store locations worldwide.",
+      "model": "Duo",
+      "summary": "iPhone Duo 于 2026 年 10 月 23 日在全球 Apple Store 正式发售",
       "link": "https://www.apple.com/newsroom/2026/10/iphone-duo-arrives-at-apple-store-locations-worldwide/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-23T06:10:35.677Z"
@@ -37,6 +38,39 @@
       "date": "2026-10-22",
       "chip": null,
       "summary": "iPhone Duo (first foldable iPhone) is available and supporting optimized apps.",
+      "link": "https://www.apple.com/newsroom/2026/10/developers-bring-incredible-new-app-experiences-to-iphone-duo/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-22T11:59:15.686Z"
+    },
+    {
+      "product": "iPad mini",
+      "event": "confirmed",
+      "date": "2026-10",
+      "chip": null,
+      "model": "OLED",
+      "summary": "iPad mini 8 预计本周发布，采用 OLED 屏幕并更新芯片。",
+      "link": "https://9to5mac.com/2026/10/25/ipad-mini-8-redesign-with-oled-coming-this-week/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Sun, 25 Oct 2026 16:06:33 +0000"
+    },
+    {
+      "product": "MacBook Pro",
+      "event": "confirmed",
+      "date": "2026-10",
+      "chip": null,
+      "model": "Touchscreen OLED",
+      "summary": "Apple 将在本周发布首款配备触摸屏的 OLED MacBook Pro。",
+      "link": "https://9to5mac.com/2026/10/25/macbook-pro-redesign-oled-touch-launching-this-week/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Sun, 25 Oct 2026 14:48:28 +0000"
+    },
+    {
+      "product": "iPhone",
+      "event": "confirmed",
+      "date": "2026-10",
+      "chip": null,
+      "model": "Duo (foldable)",
+      "summary": "iPhone Duo (首款折叠屏 iPhone) 已发布，开发者为其提供优化应用。",
       "link": "https://www.apple.com/newsroom/2026/10/developers-bring-incredible-new-app-experiences-to-iphone-duo/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-22T11:59:15.686Z"
