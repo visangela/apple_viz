@@ -1,6 +1,16 @@
 {
-  "syncedAt": "2026-10-25T14:50:09.321Z",
+  "syncedAt": "2026-10-26T02:18:06.783Z",
   "events": [
+    {
+      "product": "iPad mini",
+      "event": "released",
+      "date": "2026-10",
+      "chip": null,
+      "summary": "iPad mini 8 with OLED display is expected to debut this week.",
+      "link": "https://9to5mac.com/2026/10/25/ipad-mini-8-redesign-with-oled-coming-this-week/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Sun, 25 Oct 2026 16:06:33 +0000"
+    },
     {
       "product": "MacBook Pro",
       "event": "released",
@@ -16,7 +26,7 @@
       "event": "released",
       "date": "2026-10-23",
       "chip": null,
-      "summary": "iPhone Duo arrives at Apple Store locations worldwide",
+      "summary": "iPhone Duo officially launched at Apple Store locations worldwide.",
       "link": "https://www.apple.com/newsroom/2026/10/iphone-duo-arrives-at-apple-store-locations-worldwide/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-23T06:10:35.677Z"
@@ -26,7 +36,7 @@
       "event": "released",
       "date": "2026-10-22",
       "chip": null,
-      "summary": "iPhone Duo (first foldable iPhone) is available and developers are releasing optimized apps.",
+      "summary": "iPhone Duo (first foldable iPhone) is available and supporting optimized apps.",
       "link": "https://www.apple.com/newsroom/2026/10/developers-bring-incredible-new-app-experiences-to-iphone-duo/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-22T11:59:15.686Z"
