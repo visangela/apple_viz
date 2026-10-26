@@ -100,6 +100,7 @@ async function callOpenRouter(article) {
 
     const data = await res.json();
     const raw = data.choices?.[0]?.message?.content;
+    console.log('[LLM raw]', article.title.slice(0, 40), '→', raw);
     if (!raw) return null;
 
     let parsed;
