@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-10-26T05:26:07.091Z",
+  "syncedAt": "2026-10-26T05:39:39.498Z",
   "events": [
     {
       "product": "iPad mini",
@@ -85,6 +85,39 @@
       "link": "https://9to5mac.com/2026/10/25/macbook-pro-overhaul-cellular-support-touchscreen/",
       "sourceName": "9to5Mac",
       "pubDate": "Mon, 26 Oct 2026 05:16:58 +0000"
+    },
+    {
+      "product": "MacBook Pro",
+      "event": "rumor",
+      "date": "2026-10",
+      "chip": null,
+      "model": null,
+      "summary": "传闻 MacBook Pro 将迎来重大更新，包括 OLED 屏幕、触控支持、更轻的设计以及可能的 5G 蜂窝网络支持。",
+      "link": "https://9to5mac.com/2026/10/25/macbook-pro-overhaul-cellular-support-touchscreen/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Mon, 26 Oct 2026 05:16:58 +0000"
+    },
+    {
+      "product": "iPad mini",
+      "event": "rumor",
+      "date": "2026-10",
+      "chip": null,
+      "model": "OLED",
+      "summary": "iPad mini 8 预计本周发布，将首次采用 OLED 屏幕并更新芯片。",
+      "link": "https://9to5mac.com/2026/10/25/ipad-mini-8-redesign-with-oled-coming-this-week/",
+      "sourceName": "9to5Mac",
+      "pubDate": "Sun, 25 Oct 2026 16:06:33 +0000"
+    },
+    {
+      "product": "iPhone",
+      "event": "released",
+      "date": "2026-10",
+      "chip": null,
+      "model": "Duo",
+      "summary": "iPhone Duo 于 10 月 23 日在全球 Apple Store 正式开售",
+      "link": "https://www.apple.com/newsroom/2026/10/iphone-duo-arrives-at-apple-store-locations-worldwide/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-23T06:10:35.677Z"
     }
   ],
   "articleCount": 8
