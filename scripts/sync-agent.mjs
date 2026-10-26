@@ -49,12 +49,12 @@ const SYSTEM_PROMPT = `你是 Apple 产品路线图分析助手。
 严格按 JSON Schema 输出，不要输出任何其他文字。
 
 字段规则：
-- relevant：文章与 Apple 产品发布时间轴无关（评测、教程、促销）时设为 false。
-- product：必须是枚举中的产品线名称。
-- event：released（已发布/开售）、confirmed（官方宣布/确认）、delayed（推迟）、cancelled（取消）、rumor（传闻）之一。
-- date：事件年月，格式 YYYY-MM。文章没有明确年月时填 "unknown"，不要猜测。
-- chip：**这是最重要的字段**。只要文章中出现任何 Apple 芯片型号（M1/M2/M3/M4/M5/M6/M7/M8/M9、A12/A13/A14/A15/A16/A17/A18/A19/A20/A21/A22、S5/S6/S7/S8/S9/S10/S11/S12/S13，可带 Pro/Max/Ultra 后缀），必须原样填入，例如 "A20 Pro"、"M6"、"S11"。只有文章完全没提芯片时才填 "unknown"。不要因为不确定而填 "unknown"。
-- model：产品型号或尺寸，如 "8.x\\" OLED"、"14\\"/16\\""；不明确填 "unknown"。
+- relevant：文章与 Apple 产品发布时间轴无关时设为 false。
+- product：MacBook Air / MacBook Pro / Mac mini / Mac Studio / Mac Pro / iMac / iPad / iPad mini / iPad Air / iPad Pro / iPhone / Apple Watch 之一。
+- event：released / confirmed / delayed / cancelled / rumor 之一。
+- date：事件年月 YYYY-MM；没有明确年月填 "unknown"，不要猜测。
+- chip：只要文章出现任何 Apple 芯片型号（M1–M9、A12–A22、S5–S13，可带 Pro/Max/Ultra 后缀），必须原样填入，例如 "A20 Pro"、"M6"、"S11"。只有文章完全没提芯片时才填 "unknown"。不要因为不确定就填 "unknown"。
+- model：型号或尺寸，如 "8.x\\" OLED"、"14\\"/16\\""；不明确填 "unknown"。
 - summary：中文概括，不超过 80 字。
 
 示例：
@@ -91,13 +91,8 @@ async function callOpenRouter(article) {
         body: JSON.stringify({
             model: MODEL,
             temperature: 0,
-            max_tokens: 300,
-            response_format: {
-                type: 'json_schema',
-                json_schema: EVENT_SCHEMA
-            },
-            // 强制路由到支持 structured outputs 的 provider
-            provider: { require_parameters: true },
+            max_tokens: 400,
+            response_format: { type: 'json_object' },
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
                 { role: 'user', content: buildPrompt(article) }
@@ -161,20 +156,42 @@ async function callOpenRouter(article) {
     // ===== 兜底结束 =====
 }
 
+async function enrichArticle(item) {
+    try {
+        const res = await fetch(item.link, {
+            headers: { 'User-Agent': 'AppleTimelineAgent/1.0' },
+            signal: AbortSignal.timeout(8000)
+        });
+        const html = await res.text();
+        const text = html.replace(/<script[\s\S]*?<\/script>/gi, '')
+                         .replace(/<style[\s\S]*?<\/style>/gi, '')
+                         .replace(/<[^>]+>/g, ' ')
+                         .replace(/\s+/g, ' ')
+                         .trim();
+        return text.slice(0, 1500);
+    } catch {
+        return item.contentSnippet || '';
+    }
+}
+
 async function fetchAllFeeds() {
     const all = [];
     for (const feed of FEEDS) {
         try {
             const parsed = await parser.parseURL(feed.url);
-            (parsed.items || []).slice(0, 5).forEach(item => {
-                all.push({
+            const items = (parsed.items || []).slice(0, 5);
+            for (const item of items) {
+                const base = {
                     title: item.title || '',
                     link: item.link || '',
                     contentSnippet: (item.contentSnippet || item.content || '').slice(0, 500),
                     pubDate: item.pubDate || new Date().toISOString(),
                     source: feed.source
-                });
-            });
+                };
+                // 抓取正文，替换 contentSnippet
+                base.contentSnippet = await enrichArticle(base);
+                all.push(base);
+            }
         } catch (err) {
             console.warn(`feed failed: ${feed.source}`, err.message);
         }
