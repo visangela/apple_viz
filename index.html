@@ -417,83 +417,11 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 /* ============================================================
    真实 Agent：抓取 RSS → 解析 → 关键词匹配 → 生成事件
    ============================================================ */
-// async function fetchAgentEvents() {
-//     const events = [];
-
-//     for (const src of RSS_SOURCES) {
-//         try {
-//             const proxyUrl = CORS_PROXY + encodeURIComponent(src.url);
-//             const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(12000) });
-//             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-//             const xml = await res.text();
-//             const doc = new DOMParser().parseFromString(xml, 'text/xml');
-
-//             const items = [...doc.querySelectorAll('item')].slice(0, 25);
-//             items.forEach(item => {
-//                 const title = (item.querySelector('title')?.textContent || '').trim();
-//                 const desc  = (item.querySelector('description')?.textContent || '').trim();
-//                 const link  = (item.querySelector('link')?.textContent || '').trim();
-//                 const pub   = (item.querySelector('pubDate')?.textContent || '').trim();
-//                 const text  = (title + ' ' + desc).toLowerCase();
-
-//                 const evt = classifyArticle(title, desc, text, link, src.name, pub);
-//                 if (evt) events.push(evt);
-//             });
-//         } catch (err) {
-//             console.warn(`RSS 抓取失败：${src.name}`, err.message);
-//         }
-//     }
-
-//     // 按时间倒序，只保留最近 10 条
-//     events.sort((a, b) => (b.time || '').localeCompare(a.time || ''));
-//     return events.slice(0, 10);
-// }
 
 /////////////////// 
 
 
 let AGENT_EVENTS = [];
-
-// async function fetchAgentEvents() {
-//     try {
-//         // 加时间戳查询参数，绕过 GitHub Pages 的 10 分钟缓存
-//         const res = await fetch(`./events.json?v=${Date.now()}`, { cache: 'no-store' });
-//         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-//         const data = await res.json();
-//         AGENT_EVENTS = data.events || [];
-
-//         // 更新时间轴
-//         DATA = buildMergedData(AGENT_EVENTS);
-//         buildAxis();
-//         buildRows();
-//         buildLegend();
-//         buildTodayLine();
-//         updateVisibility();
-//         renderFeed(AGENT_EVENTS);
-
-//         // 更新状态条
-//         const meta = document.getElementById('agentMeta');
-//         if (data.syncedAt) {
-//             const t = new Date(data.syncedAt).toLocaleString('zh-CN', { hour12: false }).slice(0, 16);
-//             meta.textContent = `上次同步：${t} · ${AGENT_EVENTS.length} 条 Apple 相关事件（GitHub Actions 每日自动更新）`;
-//         } else {
-//             meta.textContent = 'events.json 尚未生成，等待首次 Actions 运行';
-//         }
-//     } catch (err) {
-//         console.error('加载 events.json 失败', err);
-//         document.getElementById('agentMeta').textContent =
-//             `events.json 加载失败：${err.message} · 时间轴显示基线数据`;
-//         // 失败时至少保证时间轴渲染基线数据
-//         DATA = buildMergedData([]);
-//         buildAxis();
-//         buildRows();
-//         buildLegend();
-//         buildTodayLine();
-//         updateVisibility();
-//     }
-// }
-
 
 async function fetchAgentEvents() {
     try {
@@ -654,39 +582,7 @@ function classifyArticle(title, desc, text, link, sourceName, pubDate) {
 
 /////////////////////
 
-// function buildMergedData(events) {
-//     const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
 
-//     events.forEach(evt => {
-//         if (!evt.patch) return;
-//         const { match, apply } = evt.patch;
-
-//         // date 为 null 时，只挂载情报到该产品线的第一条，不改条形状态
-//         if (match.d === null) {
-//             const anchor = data.find(d => d.p === match.p);
-//             if (anchor) {
-//                 anchor._agentNote = {
-//                     time: evt.time || '',
-//                     text: evt.text || '',
-//                     source: evt.source || '',
-//                     tag: evt.tag || 'rumor',
-//                     tagText: evt.tagText || '资讯',
-//                     link: evt.link || ''
-//                 };
-//             }
-//             return;
-//         }
-
-//         const target = data.find(d => d.p === match.p && d.d === match.d);
-//         if (target) {
-//             Object.assign(target, apply);
-//             target._agentPatched = true;
-//             target._agentNote = { /* ... */ };
-//         }
-//     });
-
-//     return data;
-// }
 
 
 function buildMergedData(events) {
