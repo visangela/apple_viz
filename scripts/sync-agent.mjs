@@ -31,6 +31,7 @@ const EVENT_SCHEMA = {
             event: { type: 'string', enum: VALID_EVENTS },
             date: { type: 'string', description: '事件年月，格式 YYYY-MM；不明确填 "unknown"' },
             chip: { type: 'string', description: '芯片型号；不明确填 "unknown"' },
+            model: { type: 'string', description: '产品型号或尺寸描述，如 "8.x\\" OLED"、"14\\"/16\\""；不明确填 "unknown"' },
             summary: { type: 'string', description: '中文摘要，不超过 80 字' }
         },
         required: ['relevant', 'product', 'event', 'date', 'chip', 'summary'],
@@ -49,7 +50,9 @@ const SYSTEM_PROMPT = `你是 Apple 产品路线图分析助手。
 - 如果文章与产品发布时间轴无关（评测、教程、促销），relevant 设为 false。
 - 如果文章是发布会总结或盘点，只对明确提到的产品输出事件；未在文章中出现的产品不要臆测其已发布或取消。
 - 没有明确年月时 date 填 "unknown"，不要猜测。
-- 没有提到芯片时 chip 填 "unknown"。`;
+- 没有提到芯片时 chip 填 "unknown"。
+- 如果文章明确提到芯片型号（如 A20 Pro、M6），必须填入 chip 字段，不要留 "unknown"。
+- 如果文章明确提到尺寸或型号（如 "8.x 英寸 OLED"），填入 model 字段。`;
 
 function buildPrompt(article) {
     return `标题：${article.title}
@@ -111,6 +114,7 @@ async function callOpenRouter(article) {
         event: parsed.event,
         date: parsed.date === 'unknown' ? null : parsed.date,
         chip: parsed.chip === 'unknown' ? null : parsed.chip,
+        model: parsed.model === 'unknown' ? null : parsed.model,
         summary: parsed.summary
     };
 }

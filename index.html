@@ -455,7 +455,10 @@ async function fetchAgentEvents() {
                 apply: {
                     status: e.event,
                     v: e.summary,
-                    src: `${e.sourceName || 'Agent'}（Gemma 4 31B 抽取）`
+                    src: `${e.sourceName || 'Agent'}（Gemma 4 31B 抽取）`,
+                    chip: e.chip || null,
+                    model: e.model || null,
+                    newDate: e.date || null      // 用 newDate 而不是 d，避免和 match 混淆
                 }
             }
         }));
@@ -586,13 +589,19 @@ function classifyArticle(title, desc, text, link, sourceName, pubDate) {
 
 
 function buildMergedData(events) {
-    const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
+    const data = BASE_DATA.map(d => ({
+        ...d,
+        _agentPatched: false,
+        _agentNote: null,
+        _agentCorrections: []
+    }));
 
     events.forEach(evt => {
         if (!evt.patch) return;
         const { match, apply } = evt.patch;
+        if (!match.p) return;
 
-        // 没有日期：只挂情报，不改状态
+        // 没有日期：只挂情报，不改任何字段
         if (!match.d) {
             const anchor = data.find(d => d.p === match.p);
             if (anchor && !anchor._agentNote) {
@@ -601,37 +610,62 @@ function buildMergedData(events) {
             return;
         }
 
-        // 1) 精确匹配
+        // 1) 精确日期匹配
         let target = data.find(d => d.p === match.p && d.d === match.d);
 
-        // 2) 模糊匹配：同产品线，月份差 ≤ 3
+        // 2) 模糊匹配：同产品线，月份差 ≤ 6
         if (!target) {
             const targetIdx = toIdx(match.d);
-            let best = null, bestDiff = 4;
+            let best = null, bestDiff = 7;
             data.forEach(d => {
                 if (d.p !== match.p) return;
                 const diff = Math.abs(toIdx(d.d) - targetIdx);
-                if (diff <= 3 && diff < bestDiff) { best = d; bestDiff = diff; }
+                if (diff <= 6 && diff < bestDiff) { best = d; bestDiff = diff; }
             });
             target = best;
         }
 
         if (target) {
-            Object.assign(target, apply);
+            const corrections = [];
+
+            // 芯片修正
+            if (apply.chip && apply.chip !== target.c) {
+                corrections.push(`芯片：${target.c} → ${apply.chip}`);
+                target.c = apply.chip;
+            }
+            // 型号修正
+            if (apply.model && apply.model !== target.m) {
+                corrections.push(`型号：${target.m} → ${apply.model}`);
+                target.m = apply.model;
+            }
+            // 日期修正
+            if (apply.newDate && apply.newDate !== target.d) {
+                corrections.push(`日期：${target.d} → ${apply.newDate}`);
+                target.d = apply.newDate;
+            }
+            // 状态修正
+            const prevStatus = target.status || statusOf(target.d);
+            if (apply.status && apply.status !== prevStatus) {
+                corrections.push(`状态：${STATUS_TEXT[prevStatus] || prevStatus} → ${STATUS_TEXT[apply.status] || apply.status}`);
+                target.status = apply.status;
+            }
+
             target._agentPatched = true;
             target._agentNote = buildNote(evt);
+            target._agentCorrections = corrections;
         } else if (evt.tag === 'released' || evt.tag === 'confirmed') {
-            // 3) 全新产品：插入新条目
+            // 3) 全新条目：插入时间轴
             data.push({
                 p: match.p,
                 d: match.d,
-                m: evt.model || '新机型',
-                c: evt.chip || '未知',
-                s: 'A',  // 兜底系列，可按需调整
+                m: apply.model || '新机型',
+                c: apply.chip || '未知',
+                s: evt.series || 'A',
                 lbl: evt.lbl || undefined,
-                status: evt.tag,
+                status: apply.status,
                 _agentPatched: true,
-                _agentNote: buildNote(evt)
+                _agentNote: buildNote(evt),
+                _agentCorrections: ['Agent 新增条目']
             });
         }
     });
@@ -896,6 +930,14 @@ function showProductInfo(item, endDate, estimatedEnd) {
 
     let agentBlock = '';
     if (item._agentNote) {
+        // 新增：修正记录块（如果 buildMergedData 记录了修正）
+        const correctionsHtml = (item._agentCorrections && item._agentCorrections.length)
+            ? `<div style="margin-top:8px;font-size:11.5px;color:#b35c00;background:#fff8ee;
+                            padding:6px 10px;border-radius:6px;line-height:1.6;">
+                <strong>Agent 修正：</strong>${item._agentCorrections.join('；')}
+            </div>`
+            : '';
+
         agentBlock = `
             <div class="agent-note">
                 <div class="agent-note-title">Agent 实时研判</div>
@@ -905,6 +947,7 @@ function showProductInfo(item, endDate, estimatedEnd) {
                         来源：${item._agentNote.source} · ${item._agentNote.time}
                         ${item._agentNote.link ? ` · <a href="${item._agentNote.link}" target="_blank" rel="noopener" style="color:#0071e3;">原文</a>` : ''}
                     </span>
+                    ${correctionsHtml}
                 </div>
             </div>
         `;
