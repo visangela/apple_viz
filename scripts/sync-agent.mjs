@@ -30,7 +30,7 @@ const EVENT_SCHEMA = {
             product: { type: 'string', enum: VALID_PRODUCTS },
             event: { type: 'string', enum: VALID_EVENTS },
             date: { type: 'string', description: '事件年月，格式 YYYY-MM；不明确填 "unknown"' },
-            chip: { type: 'string', description: '芯片型号；不明确填 "unknown"' },
+            chip: { type: 'string', minLength: 1, description: '芯片型号，如 A20 Pro、M6、S11；文章完全没提芯片时填 "unknown"' },
             model: { type: 'string', description: '产品型号或尺寸描述，如 "8.x\\" OLED"、"14\\"/16\\""；不明确填 "unknown"' },
             summary: { type: 'string', description: '中文摘要，不超过 80 字' }
         },
@@ -47,13 +47,27 @@ const parser = new Parser({
 const SYSTEM_PROMPT = `你是 Apple 产品路线图分析助手。
 从新闻标题和摘要中，判断它是否描述了 Apple 某个产品线的发布、推迟、取消或传闻。
 严格按 JSON Schema 输出，不要输出任何其他文字。
-- 如果文章与产品发布时间轴无关（评测、教程、促销），relevant 设为 false。
-- 如果文章是发布会总结或盘点，只对明确提到的产品输出事件；未在文章中出现的产品不要臆测其已发布或取消。
-- 没有明确年月时 date 填 "unknown"，不要猜测。
-- 没有提到芯片时 chip 填 "unknown"。
-- 如果文章明确提到芯片型号（如 A20 Pro、M6），必须填入 chip 字段，不要留 "unknown"。
-- 如果文章明确提到尺寸或型号（如 "8.x 英寸 OLED"），填入 model 字段。
-- 示例输出：{"relevant":true,"product":"iPad mini","event":"confirmed","date":"2026-10","chip":"A20 Pro","model":"8.x\" OLED","summary":"iPad mini 8 预计本周发布，OLED 屏，A20 Pro 芯片"}`;
+
+字段规则：
+- relevant：文章与 Apple 产品发布时间轴无关（评测、教程、促销）时设为 false。
+- product：必须是枚举中的产品线名称。
+- event：released（已发布/开售）、confirmed（官方宣布/确认）、delayed（推迟）、cancelled（取消）、rumor（传闻）之一。
+- date：事件年月，格式 YYYY-MM。文章没有明确年月时填 "unknown"，不要猜测。
+- chip：**这是最重要的字段**。只要文章中出现任何 Apple 芯片型号（M1/M2/M3/M4/M5/M6/M7/M8/M9、A12/A13/A14/A15/A16/A17/A18/A19/A20/A21/A22、S5/S6/S7/S8/S9/S10/S11/S12/S13，可带 Pro/Max/Ultra 后缀），必须原样填入，例如 "A20 Pro"、"M6"、"S11"。只有文章完全没提芯片时才填 "unknown"。不要因为不确定而填 "unknown"。
+- model：产品型号或尺寸，如 "8.x\\" OLED"、"14\\"/16\\""；不明确填 "unknown"。
+- summary：中文概括，不超过 80 字。
+
+示例：
+输入标题："iPad mini 8 with OLED display is expected to debut this week"
+输入摘要："The next iPad mini will feature an OLED display and the A20 Pro chip, according to supply chain sources."
+输出：{"relevant":true,"product":"iPad mini","event":"confirmed","date":"2026-10","chip":"A20 Pro","model":"8.x\\" OLED","summary":"iPad mini 8 预计本周发布，OLED 屏，搭载 A20 Pro 芯片"}
+
+输入标题："Apple announces new MacBook Pro with M6"
+输入摘要："Apple today announced the new 14-inch and 16-inch MacBook Pro with the M6 chip."
+输出：{"relevant":true,"product":"MacBook Pro","event":"released","date":"2026-10","chip":"M6","model":"14\\"/16\\"","summary":"苹果发布 M6 芯片的 14/16 英寸 MacBook Pro"}
+
+输入标题："iPhone 17 review: a solid upgrade"
+输出：{"relevant":false}`;
 
 function buildPrompt(article) {
     return `标题：${article.title}
@@ -111,14 +125,40 @@ async function callOpenRouter(article) {
     if (!VALID_PRODUCTS.includes(parsed.product)) return null;
     if (!VALID_EVENTS.includes(parsed.event)) return null;
 
+    // ===== 第四步：chip / date 正则兜底 =====
+    // chip 兜底：模型填 unknown 或 null 时，从原文正则提取
+    let chip = parsed.chip && parsed.chip !== 'unknown' ? parsed.chip : null;
+    if (!chip) {
+        const fullText = `${article.title} ${article.contentSnippet || ''}`;
+        const chipMatch = fullText.match(
+            /\b(M[1-9](?:\s?(?:Pro|Max|Ultra))?|A(?:1[0-9]|[1-9])(?:\s?(?:Pro|Max|Ultra))?|S(?:[1-9]|1[0-9])(?:\s?(?:Pro|Max|Ultra))?)\b/
+        );
+        if (chipMatch) chip = chipMatch[1].trim();
+    }
+
+    // date 兜底：模型填 unknown 或 null 时，从标题/摘要里找年月
+    let date = parsed.date && parsed.date !== 'unknown' ? parsed.date : null;
+    if (!date) {
+        const ymMatch = `${article.title} ${article.contentSnippet || ''}`.match(/(20\d{2})[年\-\.\s]?(\d{1,2})?月?/);
+        if (ymMatch) {
+            const y = ymMatch[1];
+            const m = ymMatch[2] ? String(parseInt(ymMatch[2])).padStart(2, '0') : null;
+            if (m) date = `${y}-${m}`;
+        }
+    }
+
+    // model 也顺手做一次 unknown → null 的归一
+    const model = parsed.model && parsed.model !== 'unknown' ? parsed.model : null;
+
     return {
         product: parsed.product,
         event: parsed.event,
-        date: parsed.date === 'unknown' ? null : parsed.date,
-        chip: parsed.chip === 'unknown' ? null : parsed.chip,
-        model: parsed.model === 'unknown' ? null : parsed.model,
+        date,
+        chip,
+        model,
         summary: parsed.summary
     };
+    // ===== 兜底结束 =====
 }
 
 async function fetchAllFeeds() {
