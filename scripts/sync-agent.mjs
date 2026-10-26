@@ -47,6 +47,7 @@ const SYSTEM_PROMPT = `你是 Apple 产品路线图分析助手。
 从新闻标题和摘要中，判断它是否描述了 Apple 某个产品线的发布、推迟、取消或传闻。
 严格按 JSON Schema 输出，不要输出任何其他文字。
 - 如果文章与产品发布时间轴无关（评测、教程、促销），relevant 设为 false。
+- 如果文章是发布会总结或盘点，只对明确提到的产品输出事件；未在文章中出现的产品不要臆测其已发布或取消。
 - 没有明确年月时 date 填 "unknown"，不要猜测。
 - 没有提到芯片时 chip 填 "unknown"。`;
 
@@ -173,14 +174,48 @@ async function main() {
         return true;
     });
 
+    // const output = {
+    //     syncedAt: new Date().toISOString(),
+    //     events: unique,
+    //     articleCount: batch.length,
+    //     errors: errors.length ? errors : undefined
+    // };
+
+    // await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf8');
+
+    ////////////////////
+    // main() 末尾，替换原来的 fs.writeFile
+    let history = [];
+    try {
+        const old = JSON.parse(await fs.readFile(OUTPUT_FILE, 'utf8'));
+        history = old.events || [];
+    } catch { /* 文件不存在，忽略 */ }
+
+    // 新事件覆盖同 key 的旧事件，其余保留
+    const merged = [...history];
+    for (const evt of unique) {
+        const idx = merged.findIndex(e =>
+            e.product === evt.product && e.date === evt.date && e.event === evt.event
+        );
+        if (idx >= 0) merged[idx] = evt;
+        else merged.push(evt);
+    }
+
+    // 只保留最近 120 天的事件，避免文件无限增长
+    const cutoff = new Date(Date.now() - 120 * 86400000).toISOString().slice(0, 10);
+    const retained = merged.filter(e => {
+        const t = e.pubDate || e.date || '';
+        return t >= cutoff;
+    });
+
     const output = {
         syncedAt: new Date().toISOString(),
-        events: unique,
+        events: retained,
         articleCount: batch.length,
         errors: errors.length ? errors : undefined
     };
+    ////////////////////
 
-    await fs.writeFile(OUTPUT_FILE, JSON.stringify(output, null, 2), 'utf8');
     console.log(`Wrote ${unique.length} events to ${OUTPUT_FILE}`);
 }
 

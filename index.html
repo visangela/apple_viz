@@ -128,6 +128,7 @@
     .bar.status-predicted { border: 1.5px dashed; }
     .bar.status-delayed   { border: 1.5px dashed; opacity: .72; }
     .bar.status-cancelled { border: 1.5px dashed; opacity: .38; text-decoration: line-through; }
+    .bar.status-missed { border: 1.5px dashed; opacity: .45; background: repeating-linear-gradient(45deg, transparent, transparent 4px, rgba(0,0,0,.05) 4px, rgba(0,0,0,.05) 8px) !important; }
     .bar:hover { filter: brightness(.95); box-shadow: 0 2px 12px rgba(0,0,0,.16); z-index: 4; }
     .bar.hl    { box-shadow: 0 0 0 2.5px rgba(0,113,227,.5), 0 2px 10px rgba(0,0,0,.12); z-index: 4; }
     .bar.dimmed { opacity: .1; }
@@ -159,6 +160,7 @@
     .st-delayed   { background: #fff0e5; color: #b35c00; }
     .st-cancelled { background: #fdecea; color: #b3261e; }
     .st-series    { background: #f0ecfb; color: #4a3a8a; }
+    .st-missed    { background: #f0f0f3; color: #515154; }
 
     .info-grid {
         display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -583,8 +585,6 @@ function classifyArticle(title, desc, text, link, sourceName, pubDate) {
 /////////////////////
 
 
-
-
 function buildMergedData(events) {
     const data = BASE_DATA.map(d => ({ ...d, _agentPatched: false, _agentNote: null }));
 
@@ -592,39 +592,62 @@ function buildMergedData(events) {
         if (!evt.patch) return;
         const { match, apply } = evt.patch;
 
-        // date 为 null：只挂情报，不改条形状态
-        if (match.d === null) {
+        // 没有日期：只挂情报，不改状态
+        if (!match.d) {
             const anchor = data.find(d => d.p === match.p);
-            if (anchor) {
-                anchor._agentNote = {
-                    time: evt.time || '',
-                    text: evt.text || '',
-                    source: evt.source || '',
-                    tag: evt.tag || 'rumor',
-                    tagText: evt.tagText || '资讯',
-                    link: evt.link || ''
-                };
+            if (anchor && !anchor._agentNote) {
+                anchor._agentNote = buildNote(evt);
             }
             return;
         }
 
-        // 有明确日期：匹配到对应条形并覆盖状态
-        const target = data.find(d => d.p === match.p && d.d === match.d);
+        // 1) 精确匹配
+        let target = data.find(d => d.p === match.p && d.d === match.d);
+
+        // 2) 模糊匹配：同产品线，月份差 ≤ 3
+        if (!target) {
+            const targetIdx = toIdx(match.d);
+            let best = null, bestDiff = 4;
+            data.forEach(d => {
+                if (d.p !== match.p) return;
+                const diff = Math.abs(toIdx(d.d) - targetIdx);
+                if (diff <= 3 && diff < bestDiff) { best = d; bestDiff = diff; }
+            });
+            target = best;
+        }
+
         if (target) {
             Object.assign(target, apply);
             target._agentPatched = true;
-            target._agentNote = {
-                time: evt.time || '',
-                text: evt.text || '',
-                source: evt.source || '',
-                tag: evt.tag || 'rumor',
-                tagText: evt.tagText || '资讯',
-                link: evt.link || ''
-            };
+            target._agentNote = buildNote(evt);
+        } else if (evt.tag === 'released' || evt.tag === 'confirmed') {
+            // 3) 全新产品：插入新条目
+            data.push({
+                p: match.p,
+                d: match.d,
+                m: evt.model || '新机型',
+                c: evt.chip || '未知',
+                s: 'A',  // 兜底系列，可按需调整
+                lbl: evt.lbl || undefined,
+                status: evt.tag,
+                _agentPatched: true,
+                _agentNote: buildNote(evt)
+            });
         }
     });
 
     return data;
+}
+
+function buildNote(evt) {
+    return {
+        time: evt.time || '',
+        text: evt.text || '',
+        source: evt.source || '',
+        tag: evt.tag || 'rumor',
+        tagText: evt.tagText || '资讯',
+        link: evt.link || ''
+    };
 }
 
 
@@ -647,11 +670,12 @@ const SERIES_LABEL = {
 };
 const STATUS_TEXT = {
     released:'已发布', confirmed:'高置信预测（已官宣）', predicted:'预测',
-    delayed:'已推迟 / 待定', cancelled:'已取消 / 项目终止'
+    delayed:'已推迟 / 待定', cancelled:'已取消 / 项目终止',
+    missed:'预测未兑现 / 待确认'
 };
 const STATUS_CLS = {
     released:'st-released', confirmed:'st-confirmed', predicted:'st-predicted',
-    delayed:'st-delayed', cancelled:'st-cancelled'
+    delayed:'st-delayed', cancelled:'st-cancelled', missed:'st-missed'
 };
 const CONF_TEXT = { high:'近期 · 高可能', mid:'中期 · 中可能', low:'远期 · 低可能 / 路线图推演' };
 const CONF_CLS = { high:'conf-high', mid:'conf-mid', low:'conf-low' };
@@ -677,8 +701,10 @@ function statusOf(dateStr) {
     const [y, m] = dateStr.split('-').map(Number);
     const ym = y * 12 + (m - 1);
     const nowYm = NOW.y * 12 + (NOW.m - 1);
-    if (ym < nowYm) return 'released';
-    if (ym <= nowYm + 3) return 'confirmed';
+
+    if (ym < nowYm - 6) return 'released';   // 历史已确认
+    if (ym < nowYm) return 'missed';         // 刚过窗口，无 Agent 确认 → 跳票/待确认
+    if (ym <= nowYm + 3) return 'confirmed'; // 3 个月内视为已官宣
     return 'predicted';
 }
 function confOf(dateStr) {
