@@ -3,7 +3,7 @@ import fs from 'node:fs/promises';
 import Parser from 'rss-parser';
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'nvidia/nemotron-3.5-embed-8b:free';
+const MODEL = 'google/gemma-4-31b-it:free';
 const MAX_ARTICLES = 8;          // 免费层每天 50 请求，单次最多处理 8 篇
 const OUTPUT_FILE = 'events.json';
 
@@ -168,7 +168,7 @@ async function enrichArticle(item) {
                          .replace(/<[^>]+>/g, ' ')
                          .replace(/\s+/g, ' ')
                          .trim();
-        return text.slice(0, 1500);
+        return text.slice(0, 3000);
     } catch {
         return item.contentSnippet || '';
     }
