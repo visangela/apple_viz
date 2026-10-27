@@ -2,9 +2,9 @@ name: Sync Apple Timeline Agent
 
 on:
   schedule:
-    # 每天 UTC 01:17 运行（北京时间 09:17）
+    # 每天 UTC 17:00 运行（北京时间 01:00）
     # GitHub Actions 的 cron 使用 UTC，不支持时区后缀
-    - cron: '17 1 * * *'
+    - cron: '0 17 * * *'
   workflow_dispatch:      # 允许手动触发，用于测试
 
 permissions:
