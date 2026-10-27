@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-10-27T01:37:09.721Z",
+  "syncedAt": "2026-10-27T01:46:51.793Z",
   "events": [
     {
       "product": "iPad mini",
@@ -123,13 +123,6 @@
   ],
   "articleCount": 8,
   "errors": [
-    "9to5Mac: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "9to5Mac: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "9to5Mac: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "9to5Mac: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "9to5Mac: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "Apple Newsroom: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "Apple Newsroom: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}",
-    "Apple Newsroom: OpenRouter HTTP 400: {\"error\":{\"message\":\"nvidia/nemotron-3.5-embed-8b:free is an embedding model and cannot be used with the chat/completions endpoint. Use the /embeddings endpoint instead.\",\"code\":400},\"user_id\":\"user_3LBculGja0GGoYSPLyq6AjeGoJa\"}"
+    "rate limited, stopped early"
   ]
 }
