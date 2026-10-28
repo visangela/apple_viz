@@ -174,6 +174,12 @@ async function enrichArticle(item) {
     }
 }
 
+function normalizeDate(raw) {
+    if (!raw) return new Date().toISOString();
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
 async function fetchAllFeeds() {
     const all = [];
     for (const feed of FEEDS) {
@@ -185,7 +191,7 @@ async function fetchAllFeeds() {
                     title: item.title || '',
                     link: item.link || '',
                     contentSnippet: (item.contentSnippet || item.content || '').slice(0, 500),
-                    pubDate: item.pubDate || new Date().toISOString(),
+                    pubDate: normalizeDate(item.pubDate),   // ← 改这一行
                     source: feed.source
                 };
                 // 抓取正文，替换 contentSnippet

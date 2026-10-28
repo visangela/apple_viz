@@ -421,7 +421,11 @@ const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
    ============================================================ */
 
 /////////////////// 
-
+function formatDate(raw) {
+    if (!raw) return '';
+    const d = new Date(raw);
+    return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+}
 
 let AGENT_EVENTS = [];
 
@@ -435,7 +439,8 @@ async function fetchAgentEvents() {
 
         // 关键：把后端字段映射为前端格式
         AGENT_EVENTS = rawEvents.map(e => ({
-            time: e.date || (e.pubDate ? e.pubDate.slice(0, 10) : ''),
+            // time: e.date || (e.pubDate ? e.pubDate.slice(0, 10) : ''),
+            time: e.date || formatDate(e.pubDate),
             text: e.summary || '',
             source: e.sourceName || 'OpenRouter Agent',
             tag: e.event || 'rumor',
