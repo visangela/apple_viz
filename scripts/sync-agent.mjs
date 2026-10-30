@@ -103,9 +103,10 @@ async function callOpenRouter(article) {
             // DeepSeek 不需要 HTTP-Referer 和 X-Title
         },
         body: JSON.stringify({
-            model: MODEL,
-            temperature: 0,
-            max_tokens: 400,
+            model: MODEL, // 'deepseek-flash' 或 'deepseek-v4-pro'
+            max_tokens: 800, // 思考模式下输出会变长，建议适当调大（原为300/400）
+            reasoning_effort: 'high', // 开启深度思考，可选 'high' 或 'max'
+            // temperature: 0, // 移除：思考模式下会被忽略
             response_format: { type: 'json_object' },
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT },
