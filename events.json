@@ -1,8 +1,28 @@
 {
-  "syncedAt": "2026-10-29T21:43:05.786Z",
-  "events": [],
-  "articleCount": 8,
-  "errors": [
-    "rate limited, stopped early"
-  ]
+  "syncedAt": "2026-10-30T15:28:43.804Z",
+  "events": [
+    {
+      "product": "MacBook Pro",
+      "event": "released",
+      "date": "2026-10",
+      "chip": "M5 Pro",
+      "model": null,
+      "summary": "苹果发布搭载 PROLED XDR 显示屏的新款 MacBook Pro",
+      "link": "https://www.apple.com/newsroom/2026/10/apple-unveils-groundbreaking-macbook-pro-with-proled-xdr-display/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-28T17:09:28.430Z"
+    },
+    {
+      "product": "iMac",
+      "event": "released",
+      "date": "2026-10",
+      "chip": "M6",
+      "model": null,
+      "summary": "苹果发布搭载 M6 芯片的新款 iMac，性能和 AI 能力大幅提升",
+      "link": "https://www.apple.com/newsroom/2026/10/apple-unveils-new-imac-with-m6/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-27T12:59:15.245Z"
+    }
+  ],
+  "articleCount": 8
 }
