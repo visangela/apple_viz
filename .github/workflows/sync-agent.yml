@@ -40,7 +40,8 @@ jobs:
 
       - name: Run agent sync
         env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: node scripts/sync-agent.mjs
 
       - name: Commit and push if changed

@@ -2,8 +2,13 @@
 import fs from 'node:fs/promises';
 import Parser from 'rss-parser';
 
-const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'google/gemma-4-31b-it:free';
+// const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
+// const MODEL = 'google/gemma-4-31b-it:free';
+
+// 新代码
+const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
+const MODEL = 'deepseek-flash'; // 官方推荐的非思考模式模型
+
 const MAX_ARTICLES = 8;          // 免费层每天 50 请求，单次最多处理 8 篇
 const OUTPUT_FILE = 'events.json';
 
@@ -77,16 +82,25 @@ function buildPrompt(article) {
 }
 
 async function callOpenRouter(article) {
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) throw new Error('OPENROUTER_API_KEY 未设置');
+    // const apiKey = process.env.OPENROUTER_API_KEY;
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    if (!apiKey) throw new Error('DEEPSEEK_API_KEY 未设置');
 
-    const res = await fetch(OPENROUTER_URL, {
+    // const res = await fetch(OPENROUTER_URL, {
+    //     method: 'POST',
+    //     headers: {
+    //         'Authorization': `Bearer ${apiKey}`,
+    //         'Content-Type': 'application/json',
+    //         'HTTP-Referer': 'https://github.com/your-username/apple-timeline',
+    //         'X-Title': 'Apple Timeline Agent'
+    //     },
+    //     新代码
+    const res = await fetch(DEEPSEEK_URL, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://github.com/your-username/apple-timeline',
-            'X-Title': 'Apple Timeline Agent'
+            'Content-Type': 'application/json'
+            // DeepSeek 不需要 HTTP-Referer 和 X-Title
         },
         body: JSON.stringify({
             model: MODEL,
