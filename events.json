@@ -1,16 +1,16 @@
 {
-  "syncedAt": "2026-10-31T20:26:04.558Z",
+  "syncedAt": "2026-11-01T21:04:02.650Z",
   "events": [
     {
       "product": "MacBook Pro",
       "event": "released",
       "date": "2026-10",
-      "chip": null,
+      "chip": "M5 Pro",
       "model": null,
-      "summary": "新款 MacBook Pro 与 macOS 27 针对触控进行优化，文章介绍其触控交互设计",
-      "link": "https://9to5mac.com/2026/10/31/macbook-pro-touch-optimizations-macos-27-golden-gate/",
-      "sourceName": "9to5Mac",
-      "pubDate": "2026-10-31T19:49:44.000Z"
+      "summary": "苹果发布搭载 PROLED XDR 显示屏的新款 MacBook Pro",
+      "link": "https://www.apple.com/newsroom/2026/10/apple-unveils-groundbreaking-macbook-pro-with-proled-xdr-display/",
+      "sourceName": "Apple Newsroom",
+      "pubDate": "2026-10-28T17:09:28.430Z"
     },
     {
       "product": "iMac",
@@ -18,7 +18,7 @@
       "date": "2026-10",
       "chip": "M6",
       "model": null,
-      "summary": "苹果发布搭载 M6 芯片的新 iMac，性能与 AI 能力大幅提升",
+      "summary": "苹果发布搭载 M6 芯片的新款 iMac，性能与 AI 能力大幅提升",
       "link": "https://www.apple.com/newsroom/2026/10/apple-unveils-new-imac-with-m6/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-27T12:59:15.245Z"
