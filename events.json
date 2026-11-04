@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-03T22:15:45.080Z",
+  "syncedAt": "2026-11-04T22:30:47.749Z",
   "events": [
     {
       "product": "MacBook Pro",
@@ -33,6 +33,17 @@
       "link": "https://9to5mac.com/2026/11/02/john-ternus-addresses-iphone-duo-supply-constraints-display-issue/",
       "sourceName": "9to5Mac",
       "pubDate": "2026-11-02T21:47:30.000Z"
+    },
+    {
+      "product": "iPhone",
+      "event": "rumor",
+      "date": null,
+      "chip": null,
+      "model": null,
+      "summary": "爆料称明年 iPhone Pro 将进行重新设计，文章仅提供该传闻的最新更新",
+      "link": "https://9to5mac.com/2026/11/04/next-years-iphone-pro-redesign-gets-new-update-from-leaker/",
+      "sourceName": "9to5Mac",
+      "pubDate": "2026-11-04T19:52:50.000Z"
     }
   ],
   "articleCount": 8
