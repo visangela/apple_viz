@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-06T21:59:56.431Z",
+  "syncedAt": "2026-11-07T20:46:22.208Z",
   "events": [
     {
       "product": "MacBook Pro",
@@ -7,7 +7,7 @@
       "date": "2026-10",
       "chip": "M5 Pro",
       "model": null,
-      "summary": "苹果发布搭载 PROLED XDR 显示屏的新款 MacBook Pro",
+      "summary": "苹果发布采用 PROLED XDR 显示屏的新款 MacBook Pro",
       "link": "https://www.apple.com/newsroom/2026/10/apple-unveils-groundbreaking-macbook-pro-with-proled-xdr-display/",
       "sourceName": "Apple Newsroom",
       "pubDate": "2026-10-28T17:09:28.430Z"
@@ -40,10 +40,10 @@
       "date": null,
       "chip": null,
       "model": null,
-      "summary": "爆料称明年 iPhone Pro 将进行重新设计，文章仅提供该传闻的最新更新",
-      "link": "https://9to5mac.com/2026/11/04/next-years-iphone-pro-redesign-gets-new-update-from-leaker/",
+      "summary": "传闻 iPhone Air 2 将于明年推出，文章认为其面临比以往更大的市场压力与考验",
+      "link": "https://9to5mac.com/2026/11/07/iphone-air-2-launching-early-next-year/",
       "sourceName": "9to5Mac",
-      "pubDate": "2026-11-04T19:52:50.000Z"
+      "pubDate": "2026-11-07T17:45:55.000Z"
     }
   ],
   "articleCount": 8
