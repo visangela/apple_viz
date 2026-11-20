@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-19T23:28:33.123Z",
+  "syncedAt": "2026-11-20T23:01:48.620Z",
   "events": [
     {
       "product": "MacBook Pro",
@@ -44,6 +44,17 @@
       "link": "https://9to5mac.com/2026/11/07/iphone-air-2-launching-early-next-year/",
       "sourceName": "9to5Mac",
       "pubDate": "2026-11-07T17:45:55.000Z"
+    },
+    {
+      "product": "Apple Watch",
+      "event": "released",
+      "date": null,
+      "chip": "S11",
+      "model": "Series 12",
+      "summary": "Apple Watch Series 12 上手体验，列出四项突出功能，作者对升级感到满意",
+      "link": "https://9to5mac.com/2026/11/20/apple-watch-series-12-four-standout-features-glad-i-upgraded/",
+      "sourceName": "9to5Mac",
+      "pubDate": "2026-11-20T20:25:35.000Z"
     }
   ],
   "articleCount": 8
