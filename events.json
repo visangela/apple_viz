@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-20T23:01:48.620Z",
+  "syncedAt": "2026-11-21T22:07:13.412Z",
   "events": [
     {
       "product": "MacBook Pro",
@@ -38,12 +38,12 @@
       "product": "iPhone",
       "event": "rumor",
       "date": null,
-      "chip": null,
-      "model": null,
-      "summary": "传闻 iPhone Air 2 将于明年推出，文章认为其面临比以往更大的市场压力与考验",
-      "link": "https://9to5mac.com/2026/11/07/iphone-air-2-launching-early-next-year/",
+      "chip": "A19",
+      "model": "iPhone 18 Pro / Duo",
+      "summary": "文章展望 2027 年 iPhone 路线图，提及 iPhone 18 Pro 与 Duo 之后的后续机型。",
+      "link": "https://9to5mac.com/2026/11/21/heres-what-next-years-iphone-lineup-will-look-like/",
       "sourceName": "9to5Mac",
-      "pubDate": "2026-11-07T17:45:55.000Z"
+      "pubDate": "2026-11-21T19:35:44.000Z"
     },
     {
       "product": "Apple Watch",
