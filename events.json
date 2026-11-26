@@ -1,5 +1,5 @@
 {
-  "syncedAt": "2026-11-25T01:19:45.178Z",
+  "syncedAt": "2026-11-26T00:54:31.131Z",
   "events": [
     {
       "product": "MacBook Pro",
@@ -55,6 +55,17 @@
       "link": "https://9to5mac.com/2026/11/20/apple-watch-series-12-four-standout-features-glad-i-upgraded/",
       "sourceName": "9to5Mac",
       "pubDate": "2026-11-20T20:25:35.000Z"
+    },
+    {
+      "product": "iPad",
+      "event": "rumor",
+      "date": null,
+      "chip": null,
+      "model": null,
+      "summary": "9to5Mac 日报节目讨论 CarPlay Ultra 更新与 iPad 相关传闻，未披露具体型号与时间。",
+      "link": "https://9to5mac.com/2026/11/25/daily-november-25-2026/",
+      "sourceName": "9to5Mac",
+      "pubDate": "2026-11-25T23:46:20.000Z"
     }
   ],
   "articleCount": 8
